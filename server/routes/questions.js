@@ -49,7 +49,8 @@ router.post('/generate-ai', protect, requireAdmin, validateQuestionGen, async (r
     });
   } catch (error) {
     console.error('AI generation error:', error);
-    res.status(500).json({ message: 'Failed to generate questions. Check AI API key configuration.' });
+    const message = error.message || 'Failed to generate questions. Check AI API key configuration.';
+    res.status(500).json({ message });
   }
 });
 

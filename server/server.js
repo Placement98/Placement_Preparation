@@ -57,7 +57,17 @@ app.use('/api/resume', resumeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const judge0IsRapid = config.judge0.apiUrl.includes('rapidapi.com');
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    config: {
+      geminiConfigured: Boolean(config.gemini.apiKey),
+      judge0UrlConfigured: Boolean(config.judge0.apiUrl),
+      judge0IsRapidApi: judge0IsRapid,
+      judge0RapidKeyConfigured: judge0IsRapid ? Boolean(config.judge0.apiKey && config.judge0.apiHost) : true,
+    },
+  });
 });
 
 // 404 handler
