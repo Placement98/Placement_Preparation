@@ -152,6 +152,38 @@ export default function Dashboard() {
         </div>
       )}
 
+      {stats?.resume?.questions?.length > 0 && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header">
+            <h3 className="card-title">Resume-Based Questions</h3>
+            <button className="btn btn-outline btn-sm" onClick={() => navigate('/resume')}>
+              View Resume
+            </button>
+          </div>
+          <div className="resume-questions">
+            {stats.resume.questions.slice(0, 5).map((q, i) => (
+              <div key={`${q.question}-${i}`} className="resume-question">
+                <div className="resume-question-meta">
+                  <span className={`badge ${q.type === 'Aptitude' ? 'badge-blue' : 'badge-purple'}`}>{q.type || 'Technical'}</span>
+                  <span className="resume-difficulty">{q.difficulty || 'medium'}</span>
+                </div>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>{q.question}</div>
+                {q.options?.length > 0 && (
+                  <ul className="resume-options">
+                    {q.options.map((opt) => (
+                      <li key={opt}>{opt}</li>
+                    ))}
+                  </ul>
+                )}
+                {q.explanation && (
+                  <div className="resume-explanation">{q.explanation}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Recent Submissions</h3>

@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { protect } = require('../middleware/auth');
 const { extractResumeText, analyzeResumeText } = require('../services/resumeService');
+const ResumeAnalysis = require('../models/ResumeAnalysis');
 
 const router = express.Router();
 
@@ -32,7 +33,15 @@ router.post('/analyze', protect, upload.single('resume'), async (req, res) => {
     }
 
     const result = await analyzeResumeText(text);
-    res.json({ message: 'Resume analyzed', result });
+
+    const saved = await ResumeAnalysis.create({
+      userId: req.user._id,
+      summary: result.summary || '',
+      topics: result.topics || [],
+      questions: result.questions || [],
+    });
+
+    res.json({ message: 'Resume analyzed', result, analysisId: saved._id });
   } catch (error) {
     console.error('Resume analysis error:', error);
     res.status(500).json({ message: 'Failed to analyze resume' });

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Result = require('../models/Result');
 const Submission = require('../models/Submission');
 const Question = require('../models/Question');
+const ResumeAnalysis = require('../models/ResumeAnalysis');
 
 // GET /api/dashboard/stats - User dashboard stats
 router.get('/stats', protect, async (req, res) => {
@@ -25,6 +26,10 @@ router.get('/stats', protect, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5)
       .populate('questionId', 'type topic difficulty question problemStatement');
+
+    const latestResume = await ResumeAnalysis.findOne({ userId })
+      .sort({ createdAt: -1 })
+      .select('summary topics questions createdAt');
 
     // Calculate streaks and trends
     const latestResult = results[0];
@@ -52,6 +57,7 @@ router.get('/stats', protect, async (req, res) => {
       },
       results,
       recentSubmissions,
+      resume: latestResume,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
