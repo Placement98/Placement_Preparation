@@ -7,7 +7,7 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'default-secret-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   judge0: {
-    apiUrl: process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com',
+    apiUrl: process.env.JUDGE0_API_URL || 'https://ce.judge0.com',
     apiKey: process.env.JUDGE0_API_KEY || '',
     apiHost: process.env.JUDGE0_API_HOST || 'judge0-ce.p.rapidapi.com',
   },

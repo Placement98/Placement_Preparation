@@ -8,7 +8,7 @@ function getGeminiModel(schema) {
 
   const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
   return genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: schema,
@@ -120,7 +120,7 @@ async function testGemini() {
   }
 
   const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   const result = await model.generateContent('ping');
   return { response: result.response.text().trim() };
 }

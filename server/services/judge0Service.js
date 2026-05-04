@@ -24,6 +24,7 @@ function buildJudge0Client() {
     'Content-Type': 'application/json',
   };
 
+  // Only add RapidAPI headers when using RapidAPI (both key and host must be non-empty)
   if (config.judge0.apiKey && config.judge0.apiHost) {
     headers['X-RapidAPI-Key'] = config.judge0.apiKey;
     headers['X-RapidAPI-Host'] = config.judge0.apiHost;
@@ -32,7 +33,7 @@ function buildJudge0Client() {
   return axios.create({
     baseURL: config.judge0.apiUrl,
     headers,
-    timeout: 20000,
+    timeout: 30000,
   });
 }
 
