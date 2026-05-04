@@ -340,6 +340,19 @@ a:hover { color: var(--accent-purple); }
 .resume-difficulty { color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize; }
 .resume-options { margin: 8px 0 0 16px; color: var(--text-secondary); }
 .resume-explanation { margin-top: 8px; color: var(--text-muted); font-size: 0.85rem; }
+
+/* ===== INTERVIEW PRACTICE ===== */
+.interview-questions { display: grid; gap: 16px; }
+.interview-question { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.interview-question-title { font-weight: 600; margin-bottom: 8px; }
+.interview-answer {
+  width: 100%; min-height: 120px; resize: vertical;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-glass); border: 1px solid var(--border);
+  color: var(--text-primary); font-family: var(--font-body); font-size: 0.95rem;
+  transition: all 0.2s; outline: none;
+}
+.interview-answer:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 .test-timer {
   text-align: center; padding: 20px;
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);

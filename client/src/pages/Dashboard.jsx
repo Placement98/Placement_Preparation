@@ -11,9 +11,21 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [interviewAnswers, setInterviewAnswers] = useState({});
 
   useEffect(() => {
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('interviewAnswers');
+    if (stored) {
+      try {
+        setInterviewAnswers(JSON.parse(stored));
+      } catch {
+        setInterviewAnswers({});
+      }
+    }
   }, []);
 
   const fetchStats = async () => {
@@ -31,6 +43,14 @@ export default function Dashboard() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send email');
     }
+  };
+
+  const handleAnswerChange = (questionText, value) => {
+    setInterviewAnswers((prev) => {
+      const next = { ...prev, [questionText]: value };
+      localStorage.setItem('interviewAnswers', JSON.stringify(next));
+      return next;
+    });
   };
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
@@ -178,6 +198,30 @@ export default function Dashboard() {
                 {q.explanation && (
                   <div className="resume-explanation">{q.explanation}</div>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats?.resume?.questions?.length > 0 && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header">
+            <h3 className="card-title">Interview Practice</h3>
+          </div>
+          <div className="interview-questions">
+            {stats.resume.questions.slice(0, 5).map((q, i) => (
+              <div key={`interview-${q.question}-${i}`} className="interview-question">
+                <div className="interview-question-title">
+                  {i + 1}. {q.question}
+                </div>
+                <textarea
+                  className="interview-answer"
+                  rows={4}
+                  placeholder="Write your answer here..."
+                  value={interviewAnswers[q.question] || ''}
+                  onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                />
               </div>
             ))}
           </div>
