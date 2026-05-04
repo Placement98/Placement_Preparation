@@ -1,0 +1,145 @@
+const express = require('express');
+const router = express.Router();
+const { protect, requireAdmin } = require('../middleware/auth');
+const User = require('../models/User');
+const Result = require('../models/Result');
+const Submission = require('../models/Submission');
+const Question = require('../models/Question');
+
+// GET /api/dashboard/stats - User dashboard stats
+router.get('/stats', protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get recent results
+    const results = await Result.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // Get submission stats
+    const totalSubmissions = await Submission.countDocuments({ userId });
+    const passedSubmissions = await Submission.countDocuments({ userId, status: 'passed' });
+
+    // Get recent submissions
+    const recentSubmissions = await Submission.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('questionId', 'type topic difficulty question problemStatement');
+
+    // Calculate streaks and trends
+    const latestResult = results[0];
+    const previousResult = results[1];
+
+    let trend = 'stable';
+    if (latestResult && previousResult) {
+      if (latestResult.scores.overall > previousResult.scores.overall) trend = 'improving';
+      else if (latestResult.scores.overall < previousResult.scores.overall) trend = 'declining';
+    }
+
+    res.json({
+      user: {
+        name: req.user.name,
+        email: req.user.email,
+        totalScore: req.user.totalScore,
+        testsCompleted: req.user.testsCompleted,
+        weakTopics: req.user.weakTopics,
+      },
+      stats: {
+        totalSubmissions,
+        passedSubmissions,
+        accuracy: totalSubmissions > 0 ? Math.round((passedSubmissions / totalSubmissions) * 100) : 0,
+        trend,
+      },
+      results,
+      recentSubmissions,
+    });
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ message: 'Failed to fetch dashboard stats' });
+  }
+});
+
+// GET /api/dashboard/leaderboard - Weekly leaderboard
+router.get('/leaderboard', protect, async (req, res) => {
+  try {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // Aggregate scores from recent results
+    const leaderboard = await Result.aggregate([
+      { $match: { createdAt: { $gte: oneWeekAgo } } },
+      {
+        $group: {
+          _id: '$userId',
+          totalScore: { $sum: '$scores.overall' },
+          testsCompleted: { $sum: 1 },
+          avgScore: { $avg: '$scores.overall' },
+        },
+      },
+      { $sort: { totalScore: -1 } },
+      { $limit: 50 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 1,
+          totalScore: 1,
+          testsCompleted: 1,
+          avgScore: { $round: ['$avgScore', 1] },
+          name: '$user.name',
+          email: '$user.email',
+        },
+      },
+    ]);
+
+    // Add rank
+    const ranked = leaderboard.map((entry, index) => ({
+      rank: index + 1,
+      ...entry,
+    }));
+
+    res.json({ leaderboard: ranked });
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    res.status(500).json({ message: 'Failed to fetch leaderboard' });
+  }
+});
+
+// GET /api/dashboard/admin-stats - Admin analytics
+router.get('/admin-stats', protect, requireAdmin, async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalQuestions = await Question.countDocuments();
+    const totalSubmissions = await Submission.countDocuments();
+
+    const questionsByType = await Question.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+    ]);
+
+    const questionsByDifficulty = await Question.aggregate([
+      { $group: { _id: '$difficulty', count: { $sum: 1 } } },
+    ]);
+
+    const recentUsers = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('name email role testsCompleted totalScore createdAt');
+
+    res.json({
+      overview: { totalUsers, totalQuestions, totalSubmissions },
+      questionsByType,
+      questionsByDifficulty,
+      recentUsers,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch admin stats' });
+  }
+});
+
+module.exports = router;
