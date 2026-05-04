@@ -6,6 +6,7 @@ const Result = require('../models/Result');
 const Submission = require('../models/Submission');
 const Question = require('../models/Question');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
+const { generateMCQQuestions } = require('../services/aiService');
 
 // GET /api/dashboard/stats - User dashboard stats
 router.get('/stats', protect, async (req, res) => {
@@ -27,9 +28,29 @@ router.get('/stats', protect, async (req, res) => {
       .limit(5)
       .populate('questionId', 'type topic difficulty question problemStatement');
 
-    const latestResume = await ResumeAnalysis.findOne({ userId })
+    let latestResume = await ResumeAnalysis.findOne({ userId })
       .sort({ createdAt: -1 })
       .select('summary topics questions createdAt');
+
+    if (!latestResume || latestResume.questions?.length === 0) {
+      try {
+        const seedTopic = req.user.weakTopics?.[0] || 'JavaScript Fundamentals';
+        const generated = await generateMCQQuestions(seedTopic, 'medium', 5);
+
+        latestResume = await ResumeAnalysis.create({
+          userId,
+          summary: `Auto-generated from your performance in ${seedTopic}.`,
+          topics: [seedTopic],
+          questions: generated.map((q) => ({
+            ...q,
+            type: 'Aptitude',
+            difficulty: 'medium',
+          })),
+        });
+      } catch (error) {
+        console.error('Auto question generation error:', error.message || error);
+      }
+    }
 
     // Calculate streaks and trends
     const latestResult = results[0];
