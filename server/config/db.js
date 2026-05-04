@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+const config = require('./env');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const conn = await mongoose.connect(config.mongodbUri, {
       maxPoolSize: 10,
     });
     console.log(`✅ MongoDB connected: ${conn.connection.host}`);
