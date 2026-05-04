@@ -114,4 +114,15 @@ Requirements:
   }));
 }
 
-module.exports = { generateMCQQuestions, generateDSAQuestions };
+async function testGemini() {
+  if (!config.gemini.apiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+
+  const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const result = await model.generateContent('ping');
+  return { response: result.response.text().trim() };
+}
+
+module.exports = { generateMCQQuestions, generateDSAQuestions, testGemini };

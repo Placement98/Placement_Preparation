@@ -172,4 +172,10 @@ async function runCode(sourceCode, language, stdin) {
   }
 }
 
-module.exports = { runBatchSubmissions, runCode, LANGUAGE_IDS };
+async function testJudge0() {
+  ensureJudge0Configured();
+  const response = await judge0Client.get('/languages');
+  return { languages: response.data?.length || 0 };
+}
+
+module.exports = { runBatchSubmissions, runCode, LANGUAGE_IDS, testJudge0 };

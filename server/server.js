@@ -14,6 +14,7 @@ const analysisRoutes = require('./routes/analysis');
 const emailRoutes = require('./routes/email');
 const dashboardRoutes = require('./routes/dashboard');
 const resumeRoutes = require('./routes/resume');
+const diagnosticsRoutes = require('./routes/diagnostics');
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/diagnostics', diagnosticsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
