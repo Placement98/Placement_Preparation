@@ -60,4 +60,10 @@ export const getAdminStats = () => api.get('/dashboard/admin-stats');
 // Email
 export const sendPracticeEmail = () => api.post('/email/send-link');
 
+// Resume
+export const analyzeResume = (formData) =>
+  api.post('/resume/analyze', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 export default api;

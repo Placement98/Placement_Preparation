@@ -1,13 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, FileText, Code2, Trophy, Settings,
-  LogOut, BookOpen, BarChart3, Shield
+  LogOut, BookOpen, BarChart3, Shield, Upload, Menu
 } from 'lucide-react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -21,6 +23,7 @@ export default function Layout({ children }) {
     { to: '/coding', icon: <Code2 />, label: 'Code Editor' },
     { to: '/results', icon: <BarChart3 />, label: 'Results' },
     { to: '/leaderboard', icon: <Trophy />, label: 'Leaderboard' },
+    { to: '/resume', icon: <Upload />, label: 'Resume' },
   ];
 
   const adminItems = [
@@ -28,8 +31,12 @@ export default function Layout({ children }) {
   ];
 
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
+    <div className={`app-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'show' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
           <img src="/logo.png" alt="PrepNinja" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} />
           <div className="sidebar-logo-text">Prep<span>Ninja</span></div>
@@ -42,6 +49,7 @@ export default function Layout({ children }) {
               key={item.to}
               to={item.to}
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
             >
               {item.icon}
               {item.label}
@@ -74,6 +82,9 @@ export default function Layout({ children }) {
       </aside>
 
       <div className="navbar">
+        <button className="navbar-menu" onClick={() => setSidebarOpen(true)}>
+          <Menu size={20} />
+        </button>
         <div className="navbar-title"></div>
         <div className="navbar-user">
           <div className="navbar-avatar">

@@ -11,6 +11,7 @@ import PracticePage from './pages/PracticePage';
 import ResultsPage from './pages/ResultsPage';
 import Leaderboard from './pages/Leaderboard';
 import AdminPanel from './pages/AdminPanel';
+import ResumePage from './pages/ResumePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ function AppRoutes() {
       <Route path="/practice" element={<ProtectedRoute><PracticePage /></ProtectedRoute>} />
       <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+      <Route path="/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

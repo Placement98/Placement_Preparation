@@ -59,6 +59,7 @@ a:hover { color: var(--accent-purple); }
 .app-layout { display: flex; min-height: 100vh; }
 .app-main { flex: 1; margin-left: 260px; padding: 24px 32px; transition: margin-left 0.3s; }
 @media (max-width: 768px) { .app-main { margin-left: 0; padding: 16px; } }
+.app-layout.sidebar-open { overflow: hidden; }
 
 /* ===== NAVBAR ===== */
 .navbar {
@@ -67,6 +68,12 @@ a:hover { color: var(--accent-purple); }
   padding: 0 32px; height: 64px;
   background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
+}
+.navbar-menu {
+  display: none; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  background: var(--bg-glass); border: 1px solid var(--border);
+  color: var(--text-primary); cursor: pointer;
 }
 .navbar-title { font-size: 1.1rem; font-weight: 600; }
 .navbar-user {
@@ -81,7 +88,11 @@ a:hover { color: var(--accent-purple); }
   background: var(--gradient-primary); display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 0.8rem; color: white;
 }
-@media (max-width: 768px) { .navbar { left: 0; padding: 0 16px; } }
+@media (max-width: 768px) {
+  .navbar { left: 0; padding: 0 16px; }
+  .navbar-menu { display: inline-flex; }
+  .navbar-user span { display: none; }
+}
 
 /* ===== SIDEBAR ===== */
 .sidebar {
@@ -90,6 +101,11 @@ a:hover { color: var(--accent-purple); }
   border-right: 1px solid var(--border); display: flex; flex-direction: column;
   transition: transform 0.3s;
 }
+.sidebar-overlay {
+  position: fixed; inset: 0; background: rgba(2, 6, 23, 0.6);
+  z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.sidebar-overlay.show { opacity: 1; pointer-events: auto; }
 .sidebar-logo {
   padding: 20px 24px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 12px;
@@ -254,6 +270,10 @@ a:hover { color: var(--accent-purple); }
 .page-header { margin-bottom: 24px; padding-top: 72px; }
 .page-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
 .page-subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+@media (max-width: 768px) {
+  .page-header { padding-top: 64px; }
+  .page-title { font-size: 1.3rem; }
+}
 
 /* ===== LOADING ===== */
 .loading-screen {
@@ -283,6 +303,9 @@ a:hover { color: var(--accent-purple); }
   border-radius: var(--radius-xl); padding: 40px;
   backdrop-filter: blur(20px); box-shadow: var(--shadow-lg);
 }
+@media (max-width: 480px) {
+  .auth-card { padding: 24px; }
+}
 .auth-logo { text-align: center; margin-bottom: 32px; }
 .auth-logo h1 { font-size: 1.6rem; font-weight: 800; }
 .auth-logo h1 span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -294,6 +317,29 @@ a:hover { color: var(--accent-purple); }
 .test-layout { display: flex; gap: 24px; padding-top: 72px; min-height: 100vh; }
 .test-sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 88px; height: fit-content; }
 .test-content { flex: 1; min-width: 0; }
+@media (max-width: 900px) {
+  .test-layout { flex-direction: column; }
+  .test-sidebar { width: 100%; position: static; }
+}
+
+/* ===== RESUME ===== */
+.resume-card { display: grid; gap: 16px; }
+.resume-drop {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  padding: 16px; border: 1px dashed var(--border);
+  border-radius: var(--radius-md); background: var(--bg-glass);
+}
+.resume-drop input {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.resume-hint { color: var(--text-muted); font-size: 0.8rem; }
+.resume-file { color: var(--text-secondary); font-size: 0.85rem; }
+.resume-questions { display: grid; gap: 12px; }
+.resume-question { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.resume-question-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.resume-difficulty { color: var(--text-muted); font-size: 0.8rem; text-transform: capitalize; }
+.resume-options { margin: 8px 0 0 16px; color: var(--text-secondary); }
+.resume-explanation { margin-top: 8px; color: var(--text-muted); font-size: 0.85rem; }
 .test-timer {
   text-align: center; padding: 20px;
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
