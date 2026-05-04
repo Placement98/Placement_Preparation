@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, FileText, Code2, Trophy, Settings,
-  LogOut, BookOpen, BarChart3, Shield, Upload, Menu
+  LogOut, BookOpen, BarChart3, Shield, Upload, Menu, MessageSquareText
 } from 'lucide-react';
 
 export default function Layout({ children }) {
@@ -24,6 +24,7 @@ export default function Layout({ children }) {
     { to: '/results', icon: <BarChart3 />, label: 'Results' },
     { to: '/leaderboard', icon: <Trophy />, label: 'Leaderboard' },
     { to: '/resume', icon: <Upload />, label: 'Resume' },
+    { to: '/interview', icon: <MessageSquareText />, label: 'Interview' },
   ];
 
   const adminItems = [

@@ -159,6 +159,9 @@ a:hover { color: var(--accent-purple); }
 .card:hover { border-color: rgba(255,255,255,0.12); box-shadow: var(--shadow-glow); }
 .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .card-title { font-size: 1rem; font-weight: 600; }
+@media (max-width: 768px) {
+  .card-header { flex-wrap: wrap; gap: 12px; }
+}
 
 /* ===== STAT CARDS ===== */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }

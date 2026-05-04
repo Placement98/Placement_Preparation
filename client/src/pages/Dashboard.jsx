@@ -84,9 +84,12 @@ export default function Dashboard() {
             <h1 className="page-title">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
             <p className="page-subtitle">Here's your performance overview</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-outline" onClick={() => navigate('/test')}>
               <BookOpen size={16} /> Take Assessment
+            </button>
+            <button className="btn btn-outline" onClick={() => navigate('/interview')}>
+              <Send size={16} /> Mock Interview
             </button>
             {stats?.user?.weakTopics?.length > 0 && (
               <button className="btn btn-primary" onClick={handleSendEmail}>

@@ -12,6 +12,7 @@ import ResultsPage from './pages/ResultsPage';
 import Leaderboard from './pages/Leaderboard';
 import AdminPanel from './pages/AdminPanel';
 import ResumePage from './pages/ResumePage';
+import MockInterviewPage from './pages/MockInterviewPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
+      <Route path="/interview" element={<ProtectedRoute><MockInterviewPage /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
