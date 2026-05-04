@@ -8,20 +8,42 @@ const LANGUAGE_IDS = {
   java: 62,
 };
 
-const judge0Client = axios.create({
-  baseURL: config.judge0.apiUrl,
-  headers: {
+function ensureJudge0Configured() {
+  if (!config.judge0.apiUrl) {
+    throw new Error('Judge0 API URL not configured');
+  }
+
+  const isRapidApi = config.judge0.apiUrl.includes('rapidapi.com');
+  if (isRapidApi && (!config.judge0.apiKey || !config.judge0.apiHost)) {
+    throw new Error('Judge0 RapidAPI credentials not configured');
+  }
+}
+
+function buildJudge0Client() {
+  const headers = {
     'Content-Type': 'application/json',
-    'X-RapidAPI-Key': config.judge0.apiKey,
-    'X-RapidAPI-Host': config.judge0.apiHost,
-  },
-});
+  };
+
+  if (config.judge0.apiKey && config.judge0.apiHost) {
+    headers['X-RapidAPI-Key'] = config.judge0.apiKey;
+    headers['X-RapidAPI-Host'] = config.judge0.apiHost;
+  }
+
+  return axios.create({
+    baseURL: config.judge0.apiUrl,
+    headers,
+    timeout: 20000,
+  });
+}
+
+const judge0Client = buildJudge0Client();
 
 /**
  * Submit code for execution against a single test case
  */
 async function submitCode(sourceCode, languageId, stdin, expectedOutput) {
   try {
+    ensureJudge0Configured();
     const response = await judge0Client.post('/submissions?base64_encoded=false&wait=true&fields=*', {
       source_code: sourceCode,
       language_id: languageId,
@@ -55,6 +77,7 @@ async function runBatchSubmissions(sourceCode, language, testCases) {
   }));
 
   try {
+    ensureJudge0Configured();
     // Submit batch
     const batchResponse = await judge0Client.post(
       '/submissions/batch?base64_encoded=false',
@@ -111,12 +134,12 @@ async function runBatchSubmissions(sourceCode, language, testCases) {
     return testCases.map((tc, index) => ({
       testCaseIndex: index,
       passed: false,
-      output: 'Code execution service unavailable. Please configure Judge0 API key.',
+      output: 'Code execution service unavailable. Please configure Judge0 API settings.',
       expected: tc.expectedOutput,
       time: '0',
       memory: '0 KB',
       statusDescription: 'Service Unavailable',
-      error: 'Judge0 API key not configured',
+      error: error.message || 'Judge0 not configured',
     }));
   }
 }
@@ -129,6 +152,7 @@ async function runCode(sourceCode, language, stdin) {
   if (!languageId) throw new Error(`Unsupported language: ${language}`);
 
   try {
+    ensureJudge0Configured();
     const result = await submitCode(sourceCode, languageId, stdin, null);
     return {
       output: (result.stdout || '').trim(),

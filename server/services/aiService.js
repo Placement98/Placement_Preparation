@@ -1,7 +1,20 @@
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const config = require('../config/env');
 
-const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+function getGeminiModel(schema) {
+  if (!config.gemini.apiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+
+  const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+  return genAI.getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: schema,
+    },
+  });
+}
 
 // Schema for MCQ questions
 const mcqSchema = {
@@ -47,13 +60,7 @@ const dsaSchema = {
  * Generate aptitude (MCQ) questions using Gemini AI
  */
 async function generateMCQQuestions(topic, difficulty, count = 3) {
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: mcqSchema,
-    },
-  });
+  const model = getGeminiModel(mcqSchema);
 
   const prompt = `Generate ${count} unique ${difficulty} difficulty multiple choice questions for placement preparation on the topic "${topic}".
   
@@ -73,13 +80,7 @@ Requirements:
  * Generate DSA (coding) questions using Gemini AI
  */
 async function generateDSAQuestions(topic, difficulty, count = 1) {
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: dsaSchema,
-    },
-  });
+  const model = getGeminiModel(dsaSchema);
 
   const prompt = `Generate ${count} unique ${difficulty} difficulty DSA coding problem(s) for placement preparation on the topic "${topic}".
 
