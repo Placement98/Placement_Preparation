@@ -18,7 +18,7 @@ export default function Leaderboard() {
     <div className="fade-in">
       <div className="page-header">
         <h1 className="page-title"><Trophy size={28} style={{ marginRight: 8, color: 'var(--accent-amber)' }} /> Leaderboard</h1>
-        <p className="page-subtitle">Weekly rankings — top performers</p>
+        <p className="page-subtitle">Daily rankings — top performers</p>
       </div>
 
       {data.length > 0 ? (

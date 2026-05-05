@@ -198,9 +198,62 @@ async function generateRandomQuestions(count = 15) {
   return questions.slice(0, count);
 }
 
+async function generateFixedMixQuestions(dsaCount, aptitudeCount) {
+  const questions = [];
+
+  let remainingAptitude = aptitudeCount;
+  while (remainingAptitude > 0) {
+    const batch = Math.min(3, remainingAptitude);
+    const topic = pickRandom(TOPICS);
+    const difficulty = pickRandom(DIFFICULTIES);
+    const generated = await generateMCQQuestions(topic, difficulty, batch);
+    generated.forEach((q) => {
+      questions.push({
+        type: 'Aptitude',
+        topic,
+        difficulty,
+        aiGenerated: true,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      });
+    });
+    remainingAptitude -= batch;
+  }
+
+  let remainingDsa = dsaCount;
+  while (remainingDsa > 0) {
+    const topic = pickRandom(TOPICS);
+    const difficulty = pickRandom(DIFFICULTIES);
+    const generated = await generateDSAQuestions(topic, difficulty, 1);
+    generated.forEach((q) => {
+      questions.push({
+        type: 'DSA',
+        topic,
+        difficulty,
+        aiGenerated: true,
+        problemStatement: q.problemStatement,
+        functionSignature: q.functionSignature,
+        starterCode: q.starterCode,
+        testCases: q.testCases,
+      });
+    });
+    remainingDsa -= 1;
+  }
+
+  return questions.slice(0, dsaCount + aptitudeCount);
+}
+
 async function testGroq() {
   const result = await groqChatJson('Return JSON: {"ok": true}');
   return result;
 }
 
-module.exports = { generateMCQQuestions, generateDSAQuestions, generateRandomQuestions, testGroq };
+module.exports = {
+  generateMCQQuestions,
+  generateDSAQuestions,
+  generateRandomQuestions,
+  generateFixedMixQuestions,
+  testGroq,
+};

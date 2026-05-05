@@ -13,6 +13,7 @@ export default function TestPage() {
   const [timeLeft, setTimeLeft] = useState(3600);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [round, setRound] = useState(null);
 
   const handleStart = async () => {
     setLoading(true);
@@ -20,6 +21,7 @@ export default function TestPage() {
       const res = await startTest({});
       setQuestions(res.data.questions);
       setTimeLeft(res.data.timeLimit || 3600);
+      setRound(res.data.round || null);
       setPhase('testing');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to start test');
@@ -36,14 +38,18 @@ export default function TestPage() {
         questionId: q._id,
         selectedAnswer: answers[q._id] || null,
       }));
-      const res = await submitTest({ answers: answerArray, timeTaken: 3600 - timeLeft });
+      const res = await submitTest({
+        answers: answerArray,
+        timeTaken: 3600 - timeLeft,
+        roundId: round?.id || null,
+      });
       setResult(res.data.result);
       toast.success('Test submitted!');
     } catch (err) {
       toast.error('Failed to submit test');
     }
     setLoading(false);
-  }, [phase, questions, answers, timeLeft]);
+  }, [phase, questions, answers, timeLeft, round]);
 
   // Timer
   useEffect(() => {

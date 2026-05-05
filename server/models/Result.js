@@ -12,6 +12,19 @@ const resultSchema = new mongoose.Schema({
     enum: ['assessment', 'practice'],
     default: 'assessment',
   },
+  roundId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AssessmentRound',
+    index: true,
+  },
+  roundDateKey: {
+    type: String,
+    index: true,
+  },
+  roundSlot: {
+    type: String,
+    enum: ['morning', 'evening'],
+  },
   scores: {
     DSA: { type: Number, default: 0 },
     Aptitude: { type: Number, default: 0 },
@@ -33,5 +46,6 @@ const resultSchema = new mongoose.Schema({
 });
 
 resultSchema.index({ userId: 1, createdAt: -1 });
+resultSchema.index({ roundDateKey: 1, userId: 1 });
 
 module.exports = mongoose.model('Result', resultSchema);

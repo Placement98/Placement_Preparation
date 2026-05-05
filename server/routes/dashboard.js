@@ -7,6 +7,7 @@ const Submission = require('../models/Submission');
 const Question = require('../models/Question');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 const { generateMCQQuestions } = require('../services/aiService');
+const { TIME_ZONE, getDateKeyInTimeZone } = require('../utils/time');
 
 // GET /api/dashboard/stats - User dashboard stats
 router.get('/stats', protect, async (req, res) => {
@@ -86,14 +87,14 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
-// GET /api/dashboard/leaderboard - Weekly leaderboard
+// GET /api/dashboard/leaderboard - Daily leaderboard (combined rounds)
 router.get('/leaderboard', protect, async (req, res) => {
   try {
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const todayKey = getDateKeyInTimeZone(new Date(), TIME_ZONE);
 
     // Aggregate scores from recent results
     const leaderboard = await Result.aggregate([
-      { $match: { createdAt: { $gte: oneWeekAgo } } },
+      { $match: { roundDateKey: todayKey, testType: 'assessment' } },
       {
         $group: {
           _id: '$userId',

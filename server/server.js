@@ -15,6 +15,7 @@ const emailRoutes = require('./routes/email');
 const dashboardRoutes = require('./routes/dashboard');
 const resumeRoutes = require('./routes/resume');
 const diagnosticsRoutes = require('./routes/diagnostics');
+const { startAssessmentScheduler } = require('./services/assessmentService');
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     config: {
+      groqConfigured: Boolean(config.groq.apiKey),
       geminiConfigured: Boolean(config.gemini.apiKey),
       judge0UrlConfigured: Boolean(config.judge0.apiUrl),
       judge0IsRapidApi: judge0IsRapid,
@@ -88,6 +90,7 @@ app.use((err, req, res, next) => {
 // Start server
 const startServer = async () => {
   await connectDB();
+  startAssessmentScheduler();
 
   app.listen(config.port, () => {
     console.log(`\n🚀 Server running on http://localhost:${config.port}`);

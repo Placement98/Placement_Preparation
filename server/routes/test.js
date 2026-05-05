@@ -2,38 +2,28 @@ const express = require('express');
 const router = express.Router();
 const Question = require('../models/Question');
 const Submission = require('../models/Submission');
+const AssessmentRound = require('../models/AssessmentRound');
 const { protect } = require('../middleware/auth');
 const { analyzeTestResults } = require('../services/analysisService');
 const { sendPracticeEmail } = require('../services/emailService');
+const { getCurrentRound, ROUND_CONFIG } = require('../services/assessmentService');
 
 // POST /api/test/start - Start an assessment test
 router.post('/start', protect, async (req, res) => {
   try {
-    const { dsaCount = 3, aptitudeCount = 7 } = req.body;
+    const round = await getCurrentRound();
+    const questionIds = round?.questionIds || [];
+    const allQuestions = questionIds.length
+      ? await Question.find({ _id: { $in: questionIds } })
+      : [];
 
-    // Get random DSA questions
-    const dsaQuestions = await Question.aggregate([
-      { $match: { type: 'DSA' } },
-      { $sample: { size: dsaCount } },
-    ]);
-
-    // Get random Aptitude questions
-    const aptitudeQuestions = await Question.aggregate([
-      { $match: { type: 'Aptitude' } },
-      { $sample: { size: aptitudeCount } },
-    ]);
-
-    const allQuestions = [...dsaQuestions, ...aptitudeQuestions];
-
-    // Shuffle
-    for (let i = allQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
-    }
+    const orderedQuestions = questionIds.length
+      ? questionIds.map((id) => allQuestions.find((q) => q._id.equals(id))).filter(Boolean)
+      : allQuestions;
 
     // Sanitize - remove answers
-    const sanitized = allQuestions.map(q => {
-      const copy = { ...q };
+    const sanitized = orderedQuestions.map(q => {
+      const copy = q.toObject();
       delete copy.correctAnswer;
       delete copy.explanation;
       if (copy.testCases) {
@@ -42,12 +32,25 @@ router.post('/start', protect, async (req, res) => {
       return copy;
     });
 
+    if (sanitized.length === 0) {
+      return res.status(503).json({ message: 'Assessment questions are not ready yet. Please try again shortly.' });
+    }
+
     res.json({
       message: 'Test started',
       questions: sanitized,
       totalQuestions: sanitized.length,
       timeLimit: 60 * 60, // 60 minutes in seconds
       startedAt: new Date(),
+      round: round
+        ? {
+          id: round._id,
+          dateKey: round.dateKey,
+          slot: round.slot,
+          dsaCount: ROUND_CONFIG.dsaCount,
+          aptitudeCount: ROUND_CONFIG.aptitudeCount,
+        }
+        : null,
     });
   } catch (error) {
     console.error('Start test error:', error);
@@ -58,7 +61,7 @@ router.post('/start', protect, async (req, res) => {
 // POST /api/test/submit - Submit test answers
 router.post('/submit', protect, async (req, res) => {
   try {
-    const { answers, timeTaken } = req.body;
+    const { answers, timeTaken, roundId } = req.body;
     // answers: [{ questionId, selectedAnswer (for MCQ), code, language (for DSA) }]
 
     if (!answers || !Array.isArray(answers)) {
@@ -99,7 +102,19 @@ router.post('/submit', protect, async (req, res) => {
     }).populate('questionId');
 
     // Analyze results
-    const result = await analyzeTestResults(req.user._id, populatedSubmissions, 'assessment');
+    let roundMeta = null;
+    if (roundId) {
+      const round = await AssessmentRound.findById(roundId);
+      if (round) {
+        roundMeta = {
+          roundId: round._id,
+          roundDateKey: round.dateKey,
+          roundSlot: round.slot,
+        };
+      }
+    }
+
+    const result = await analyzeTestResults(req.user._id, populatedSubmissions, 'assessment', roundMeta);
 
     // Auto-send practice email if weak topics detected (fire-and-forget)
     if (result.weakTopics && result.weakTopics.length > 0) {

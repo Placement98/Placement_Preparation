@@ -7,7 +7,7 @@ const WEAK_THRESHOLD = 0.5; // 50% accuracy threshold
 /**
  * Analyze test results and identify weak topics
  */
-async function analyzeTestResults(userId, submissions, testType = 'assessment') {
+async function analyzeTestResults(userId, submissions, testType = 'assessment', roundMeta = null) {
   const topicScores = {};
   const topicTotals = {};
   let dsaCorrect = 0, dsaTotal = 0;
@@ -59,6 +59,9 @@ async function analyzeTestResults(userId, submissions, testType = 'assessment') 
   const result = await Result.create({
     userId,
     testType,
+    roundId: roundMeta?.roundId || undefined,
+    roundDateKey: roundMeta?.roundDateKey || undefined,
+    roundSlot: roundMeta?.roundSlot || undefined,
     scores: { DSA: dsaScore, Aptitude: aptScore, overall: overallScore },
     topicScores: topicPercentages,
     weakTopics,
