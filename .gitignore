@@ -5,8 +5,8 @@ cache/
 *.log
 
 # Env files
-# .env
-# .env.*
+.env
+.env.*
 
 # Coverage
 coverage/
