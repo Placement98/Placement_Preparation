@@ -7,7 +7,7 @@ const Submission = require('../models/Submission');
 const Question = require('../models/Question');
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 const { generateMCQQuestions } = require('../services/aiService');
-const { TIME_ZONE, getDateKeyInTimeZone } = require('../utils/time');
+const { TIME_ZONE, getDateKeyInTimeZone, makeZonedDate, shiftDateKey } = require('../utils/time');
 
 // GET /api/dashboard/stats - User dashboard stats
 router.get('/stats', protect, async (req, res) => {
@@ -91,10 +91,22 @@ router.get('/stats', protect, async (req, res) => {
 router.get('/leaderboard', protect, async (req, res) => {
   try {
     const todayKey = getDateKeyInTimeZone(new Date(), TIME_ZONE);
+    const dayStart = makeZonedDate(todayKey, '00:00', TIME_ZONE);
+    const nextDayKey = shiftDateKey(todayKey, 1, TIME_ZONE);
+    const dayEnd = makeZonedDate(nextDayKey, '00:00', TIME_ZONE);
 
     // Aggregate scores from recent results
     const leaderboard = await Result.aggregate([
-      { $match: { roundDateKey: todayKey, testType: 'assessment' } },
+      {
+        $match: {
+          testType: 'assessment',
+          $or: [
+            { roundDateKey: todayKey },
+            { roundDateKey: { $exists: false }, createdAt: { $gte: dayStart, $lt: dayEnd } },
+            { roundDateKey: null, createdAt: { $gte: dayStart, $lt: dayEnd } },
+          ],
+        },
+      },
       {
         $group: {
           _id: '$userId',
