@@ -36,6 +36,7 @@ export const getMe = () => api.get('/auth/me');
 export const getQuestions = (params) => api.get('/questions', { params });
 export const getQuestion = (id) => api.get(`/questions/${id}`);
 export const generateAIQuestions = (data) => api.post('/questions/generate-ai', data);
+export const generateCompanyQuestions = (data) => api.post('/questions/generate-company', data);
 export const createQuestion = (data) => api.post('/questions', data);
 export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data);
 export const deleteQuestion = (id) => api.delete(`/questions/${id}`);

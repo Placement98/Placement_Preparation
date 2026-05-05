@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Question = require('../models/Question');
 const { protect, requireAdmin } = require('../middleware/auth');
-const { validateQuestionGen } = require('../middleware/validator');
-const { generateMCQQuestions, generateDSAQuestions } = require('../services/aiService');
+const { validateQuestionGen, validateCompanyGen } = require('../middleware/validator');
+const { generateMCQQuestions, generateDSAQuestions, generateCompanyQuestions } = require('../services/aiService');
 
 // POST /api/questions/generate-ai - Generate questions with AI
 router.post('/generate-ai', protect, requireAdmin, validateQuestionGen, async (req, res) => {
@@ -50,6 +50,25 @@ router.post('/generate-ai', protect, requireAdmin, validateQuestionGen, async (r
   } catch (error) {
     console.error('AI generation error:', error);
     const message = error.message || 'Failed to generate questions. Check AI API key configuration.';
+    res.status(500).json({ message });
+  }
+});
+
+// POST /api/questions/generate-company - Generate company-based questions
+router.post('/generate-company', protect, validateCompanyGen, async (req, res) => {
+  try {
+    const { company, dsaCount = 3, aptitudeCount = 12 } = req.body;
+
+    const generated = await generateCompanyQuestions(company, dsaCount, aptitudeCount);
+    const savedQuestions = await Question.insertMany(generated);
+
+    res.status(201).json({
+      message: `${savedQuestions.length} questions generated for ${company}`,
+      questions: savedQuestions,
+    });
+  } catch (error) {
+    console.error('Company question generation error:', error);
+    const message = error.message || 'Failed to generate company questions. Check AI API key configuration.';
     res.status(500).json({ message });
   }
 });

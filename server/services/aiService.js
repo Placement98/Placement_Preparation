@@ -245,6 +245,52 @@ async function generateFixedMixQuestions(dsaCount, aptitudeCount) {
   return questions.slice(0, dsaCount + aptitudeCount);
 }
 
+async function generateCompanyQuestions(company, dsaCount = 3, aptitudeCount = 12) {
+  const questions = [];
+  const promptTopic = `${company} interview`;
+
+  let remainingAptitude = aptitudeCount;
+  while (remainingAptitude > 0) {
+    const batch = Math.min(3, remainingAptitude);
+    const difficulty = pickRandom(DIFFICULTIES);
+    const generated = await generateMCQQuestions(promptTopic, difficulty, batch);
+    generated.forEach((q) => {
+      questions.push({
+        type: 'Aptitude',
+        topic: company,
+        difficulty,
+        aiGenerated: true,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      });
+    });
+    remainingAptitude -= batch;
+  }
+
+  let remainingDsa = dsaCount;
+  while (remainingDsa > 0) {
+    const difficulty = pickRandom(DIFFICULTIES);
+    const generated = await generateDSAQuestions(promptTopic, difficulty, 1);
+    generated.forEach((q) => {
+      questions.push({
+        type: 'DSA',
+        topic: company,
+        difficulty,
+        aiGenerated: true,
+        problemStatement: q.problemStatement,
+        functionSignature: q.functionSignature,
+        starterCode: q.starterCode,
+        testCases: q.testCases,
+      });
+    });
+    remainingDsa -= 1;
+  }
+
+  return questions.slice(0, dsaCount + aptitudeCount);
+}
+
 async function testGroq() {
   const result = await groqChatJson('Return JSON: {"ok": true}');
   return result;
@@ -255,5 +301,6 @@ module.exports = {
   generateDSAQuestions,
   generateRandomQuestions,
   generateFixedMixQuestions,
+  generateCompanyQuestions,
   testGroq,
 };

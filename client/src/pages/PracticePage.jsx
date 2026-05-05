@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getQuestions, submitCode, submitTest } from '../api/client';
+import { getQuestions, generateCompanyQuestions, submitCode, submitTest } from '../api/client';
 import Editor from '@monaco-editor/react';
 import { BookOpen, ChevronRight, ChevronLeft, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import COMPANIES from '../data/companies';
 
 const TOPICS = ['Arrays', 'Strings', 'Linked Lists', 'Trees', 'Graphs', 'Dynamic Programming', 'Sorting', 'Searching', 'Probability', 'Logical Reasoning', 'Quantitative Aptitude', 'Verbal Ability'];
 
@@ -11,7 +12,7 @@ export default function PracticePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [topic, setTopic] = useState(searchParams.get('topic') || '');
-  const [difficulty, setDifficulty] = useState('easy');
+  const [difficulty, setDifficulty] = useState('all');
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -19,20 +20,47 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
+  const [companySearch, setCompanySearch] = useState('');
+  const [skipNextLoad, setSkipNextLoad] = useState(false);
 
   useEffect(() => {
-    if (topic) loadQuestions();
+    if (!topic) return;
+    if (skipNextLoad) {
+      setSkipNextLoad(false);
+      return;
+    }
+    loadQuestions();
   }, [topic, difficulty]);
 
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const res = await getQuestions({ topic, difficulty, limit: 10 });
+      const params = { topic, limit: 10 };
+      if (difficulty !== 'all') params.difficulty = difficulty;
+      const res = await getQuestions(params);
       setQuestions(res.data.questions);
       setCurrent(0);
       setAnswers({});
       setFeedback({});
     } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  const handleCompanySelect = async (company) => {
+    setLoading(true);
+    try {
+      const res = await generateCompanyQuestions({ company, dsaCount: 3, aptitudeCount: 12 });
+      setSkipNextLoad(true);
+      setTopic(company);
+      setDifficulty('all');
+      setQuestions(res.data.questions || []);
+      setCurrent(0);
+      setAnswers({});
+      setFeedback({});
+      toast.success(`Generated ${res.data.questions?.length || 0} questions for ${company}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate company questions');
+    }
     setLoading(false);
   };
 
@@ -44,10 +72,14 @@ export default function PracticePage() {
     else toast.error('Incorrect. Try again!');
   };
 
+  const filteredCompanies = COMPANIES.filter((company) =>
+    company.toLowerCase().includes(companySearch.trim().toLowerCase())
+  );
+
   if (!topic) {
     return (
       <div className="fade-in">
-        <div className="page-header"><h1 className="page-title">Practice</h1><p className="page-subtitle">Choose a topic to practice</p></div>
+        <div className="page-header"><h1 className="page-title">Practice</h1><p className="page-subtitle">Choose a topic or company to practice</p></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
           {TOPICS.map(t => (
             <div key={t} className="card" style={{ cursor: 'pointer', textAlign: 'center', padding: 24 }} onClick={() => setTopic(t)}>
@@ -57,6 +89,32 @@ export default function PracticePage() {
               <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t}</div>
             </div>
           ))}
+        </div>
+        <div style={{ marginTop: 32 }}>
+          <div className="card" style={{ padding: 20 }}>
+            <h3 style={{ marginBottom: 12 }}>Company-Based Practice</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>Pick a company to generate a fresh set of 15 questions.</p>
+            <input
+              className="form-input"
+              placeholder="Search companies..."
+              value={companySearch}
+              onChange={(e) => setCompanySearch(e.target.value)}
+              style={{ marginBottom: 16 }}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, maxHeight: 320, overflowY: 'auto' }}>
+              {filteredCompanies.map((company) => (
+                <button
+                  key={company}
+                  className="btn btn-outline"
+                  onClick={() => handleCompanySelect(company)}
+                  disabled={loading}
+                  style={{ justifyContent: 'center' }}
+                >
+                  {company}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -73,7 +131,7 @@ export default function PracticePage() {
             <p className="page-subtitle">{questions.length} questions loaded</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {['easy', 'medium', 'hard'].map(d => (
+            {['all', 'easy', 'medium', 'hard'].map(d => (
               <button key={d} className={`btn btn-sm ${difficulty === d ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDifficulty(d)}>{d}</button>
             ))}
             <button className="btn btn-sm btn-outline" onClick={() => setTopic('')}>Change Topic</button>

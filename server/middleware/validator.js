@@ -36,6 +36,13 @@ const validateQuestionGen = [
   handleValidation,
 ];
 
+const validateCompanyGen = [
+  body('company').trim().isLength({ min: 2, max: 80 }).withMessage('Company is required'),
+  body('dsaCount').optional().isInt({ min: 1, max: 10 }).withMessage('DSA count must be 1-10'),
+  body('aptitudeCount').optional().isInt({ min: 1, max: 30 }).withMessage('Aptitude count must be 1-30'),
+  handleValidation,
+];
+
 // Code submission validation
 const validateCodeSubmission = [
   body('code').notEmpty().withMessage('Code is required'),
@@ -48,6 +55,7 @@ module.exports = {
   validateSignup,
   validateLogin,
   validateQuestionGen,
+  validateCompanyGen,
   validateCodeSubmission,
   handleValidation,
 };
