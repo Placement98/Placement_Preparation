@@ -154,12 +154,18 @@ async function runCode(sourceCode, language, stdin) {
 
   try {
     ensureJudge0Configured();
-    const result = await judge0Client.post(
-      '/submissions?base64_encoded=false&wait=true&fields=*',
+    const result = await axios.post(
+      `${config.judge0.apiUrl}/submissions?base64_encoded=false&wait=true&fields=*`,
       {
         source_code: sourceCode,
         language_id: languageId,
         stdin: stdin,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
       }
     );
     return {
