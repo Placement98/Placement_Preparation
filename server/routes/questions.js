@@ -58,17 +58,30 @@ router.post('/generate-ai', protect, requireAdmin, validateQuestionGen, async (r
 router.get('/', protect, async (req, res) => {
   try {
     const { type, topic, difficulty, page = 1, limit = 20 } = req.query;
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
     const filter = {};
 
     if (type) filter.type = type;
     if (topic) filter.topic = topic;
     if (difficulty) filter.difficulty = difficulty;
 
-    const total = await Question.countDocuments(filter);
-    const questions = await Question.find(filter)
+    let total = await Question.countDocuments(filter);
+    let questions = await Question.find(filter)
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+
+    if (total === 0 && difficulty) {
+      const relaxedFilter = { ...filter };
+      delete relaxedFilter.difficulty;
+
+      total = await Question.countDocuments(relaxedFilter);
+      questions = await Question.find(relaxedFilter)
+        .sort({ createdAt: -1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+    }
 
     // Hide correct answers and hidden test cases for non-admin
     const sanitized = questions.map(q => {
@@ -87,8 +100,8 @@ router.get('/', protect, async (req, res) => {
       questions: sanitized,
       pagination: {
         total,
-        page: parseInt(page),
-        pages: Math.ceil(total / limit),
+        page: pageNumber,
+        pages: Math.ceil(total / limitNumber),
       },
     });
   } catch (error) {

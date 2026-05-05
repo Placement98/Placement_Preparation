@@ -11,6 +11,9 @@ module.exports = {
     apiKey: process.env.JUDGE0_API_KEY || '',
     apiHost: process.env.JUDGE0_API_HOST || 'judge0-ce.p.rapidapi.com',
   },
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+  },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
   },

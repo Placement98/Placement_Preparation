@@ -1,17 +1,17 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
-const { testGemini } = require('../services/aiService');
+const { testGroq } = require('../services/aiService');
 const { testJudge0 } = require('../services/judge0Service');
 
 const router = express.Router();
 
-// GET /api/diagnostics/gemini
-router.get('/gemini', protect, async (req, res) => {
+// GET /api/diagnostics/groq
+router.get('/groq', protect, async (req, res) => {
   try {
-    const result = await testGemini();
+    const result = await testGroq();
     res.json({ status: 'ok', result });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message || 'Gemini test failed' });
+    res.status(500).json({ status: 'error', message: error.message || 'Groq test failed' });
   }
 });
 

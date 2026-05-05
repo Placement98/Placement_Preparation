@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
+const User = require('../models/User');
+const Question = require('../models/Question');
+const { generateRandomQuestions } = require('./aiService');
 
 // Create transporter
 const createTransporter = () => {
@@ -117,4 +120,145 @@ async function sendPracticeEmail(userEmail, userName, weakTopics) {
   }
 }
 
-module.exports = { sendPracticeEmail, generatePracticeToken, verifyPracticeToken };
+function buildPracticeLinks(topics) {
+  return topics.map(({ topic, difficulty }) => {
+    const token = generatePracticeToken(null, topic, difficulty);
+    return {
+      topic,
+      difficulty,
+      url: `${config.frontendUrl}/practice?token=${token}&topic=${encodeURIComponent(topic)}&difficulty=${difficulty}`,
+    };
+  });
+}
+
+function buildQuestionsEmailHtml(userName, questions, links) {
+  const questionRows = questions.map((q, index) => {
+    const title = q.type === 'Aptitude' ? q.question : q.problemStatement;
+    const safeTitle = (title || '').replace(/\n/g, ' ').slice(0, 220);
+    const meta = `${q.type} | ${q.topic} | ${q.difficulty}`;
+    const options = q.type === 'Aptitude' && Array.isArray(q.options)
+      ? `<div style="margin-top: 6px; color: #cbd5e1; font-size: 13px;">${q.options.join(' | ')}</div>`
+      : '';
+
+    return `
+      <tr>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #1e293b; color: #e2e8f0; font-size: 14px;">
+          <div style="font-weight: 600; color: #f8fafc;">Q${index + 1}. ${safeTitle}</div>
+          <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">${meta}</div>
+          ${options}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const linksRows = links.map(link => `
+    <tr>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #1e293b;">
+        <span style="color: #f8fafc; font-weight: 500;">${link.topic}</span>
+        <span style="color: #94a3b8; font-size: 12px; margin-left: 8px;">${link.difficulty}</span>
+      </td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #1e293b;">
+        <a href="${link.url}" style="display: inline-block; padding: 8px 20px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; text-decoration: none; border-radius: 6px; font-size: 14px;">Practice Now</a>
+      </td>
+    </tr>
+  `).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="margin: 0; padding: 0; background-color: #0f172a; font-family: 'Segoe UI', Arial, sans-serif;">
+      <div style="max-width: 700px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: linear-gradient(135deg, #1e293b, #334155); border-radius: 16px; padding: 40px; border: 1px solid #475569;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #f8fafc; margin: 0; font-size: 24px;">Your AI Practice Pack</h1>
+            <p style="color: #94a3b8; margin-top: 8px;">15 fresh questions, ready for you</p>
+          </div>
+
+          <p style="color: #cbd5e1; font-size: 16px; line-height: 1.6;">
+            Hi <strong style="color: #f8fafc;">${userName}</strong>,
+          </p>
+          <p style="color: #cbd5e1; font-size: 16px; line-height: 1.6;">
+            Here are your newly generated practice questions. Try a few now and continue with the quick links below.
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 24px 0; background: #0f172a; border-radius: 12px; overflow: hidden;">
+            <thead>
+              <tr style="background: #1e293b;">
+                <th style="padding: 12px 16px; text-align: left; color: #94a3b8; font-weight: 600; font-size: 13px; text-transform: uppercase;">Questions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${questionRows}
+            </tbody>
+          </table>
+
+          <h3 style="color: #f8fafc; font-size: 16px; margin-top: 28px;">Quick Practice Links</h3>
+          <table style="width: 100%; border-collapse: collapse; margin: 16px 0 8px; background: #0f172a; border-radius: 12px; overflow: hidden;">
+            <thead>
+              <tr style="background: #1e293b;">
+                <th style="padding: 12px 16px; text-align: left; color: #94a3b8; font-weight: 600; font-size: 13px; text-transform: uppercase;">Topic</th>
+                <th style="padding: 12px 16px; text-align: left; color: #94a3b8; font-weight: 600; font-size: 13px; text-transform: uppercase;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linksRows}
+            </tbody>
+          </table>
+
+          <p style="color: #94a3b8; font-size: 13px; text-align: center; margin-top: 24px;">
+            Practice links are valid for 7 days. Keep going! 💪
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+async function sendGeneratedQuestionsToAllUsers(count = 15) {
+  const transporter = createTransporter();
+  const users = await User.find({}, 'email name');
+
+  if (!users.length) {
+    return { success: false, message: 'No users found to email.' };
+  }
+
+  const generatedQuestions = await generateRandomQuestions(count);
+  if (!generatedQuestions.length) {
+    return { success: false, message: 'No questions generated.' };
+  }
+
+  const savedQuestions = await Question.insertMany(generatedQuestions);
+  const uniqueLinks = buildPracticeLinks(
+    Array.from(
+      new Map(
+        savedQuestions.map(q => [`${q.topic}-${q.difficulty}`, { topic: q.topic, difficulty: q.difficulty }])
+      ).values()
+    )
+  );
+
+  for (const user of users) {
+    const html = buildQuestionsEmailHtml(user.name || 'Student', savedQuestions, uniqueLinks);
+    await transporter.sendMail({
+      from: `"Placement Prep" <${config.email.user}>`,
+      to: user.email,
+      subject: 'Your AI Practice Questions are Ready',
+      html,
+    });
+  }
+
+  return {
+    success: true,
+    message: `Sent ${savedQuestions.length} questions to ${users.length} users`,
+    users: users.length,
+    questions: savedQuestions.length,
+  };
+}
+
+module.exports = {
+  sendPracticeEmail,
+  sendGeneratedQuestionsToAllUsers,
+  generatePracticeToken,
+  verifyPracticeToken,
+};

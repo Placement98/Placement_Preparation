@@ -59,6 +59,7 @@ export const getAdminStats = () => api.get('/dashboard/admin-stats');
 
 // Email
 export const sendPracticeEmail = () => api.post('/email/send-link');
+export const sendGeneratedQuestionsEmail = (count = 15) => api.post('/email/send-questions', { count });
 
 // Resume
 export const analyzeResume = (formData) =>

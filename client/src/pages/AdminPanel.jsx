@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getQuestions, generateAIQuestions, deleteQuestion, getAdminStats } from '../api/client';
+import { getQuestions, generateAIQuestions, deleteQuestion, getAdminStats, sendGeneratedQuestionsEmail } from '../api/client';
 import { Sparkles, Trash2, Users, FileText, Code2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -9,6 +9,7 @@ export default function AdminPanel() {
   const [stats, setStats] = useState(null);
   const [genForm, setGenForm] = useState({ topic: 'Arrays', type: 'Aptitude', difficulty: 'medium', count: 3 });
   const [generating, setGenerating] = useState(false);
+  const [emailing, setEmailing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadData(); }, []);
@@ -30,9 +31,21 @@ export default function AdminPanel() {
       toast.success(res.data.message);
       loadData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Generation failed. Check Gemini API key.');
+      toast.error(err.response?.data?.message || 'Generation failed. Check Groq API key.');
     }
     setGenerating(false);
+  };
+
+  const handleGenerateAndEmail = async () => {
+    setEmailing(true);
+    try {
+      const res = await sendGeneratedQuestionsEmail(15);
+      toast.success(res.data.message || 'Questions generated and emailed');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate and email questions');
+    }
+    setEmailing(false);
   };
 
   const handleDelete = async (id) => {
@@ -99,6 +112,9 @@ export default function AdminPanel() {
           </div>
           <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
             {generating ? <><RefreshCw size={16} className="spinning" /> Generating...</> : <><Sparkles size={16} /> Generate Questions</>}
+          </button>
+          <button className="btn btn-outline" style={{ marginLeft: 12 }} onClick={handleGenerateAndEmail} disabled={emailing}>
+            {emailing ? <><RefreshCw size={16} className="spinning" /> Sending...</> : 'Generate + Email All Users'}
           </button>
         </div>
       )}
