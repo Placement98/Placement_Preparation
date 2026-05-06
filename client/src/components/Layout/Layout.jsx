@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  LayoutDashboard, FileText, Code2, Trophy, UserRound,
+  LayoutDashboard, FileText, Code2, Trophy, UserRound, Home,
   LogOut, BookOpen, BarChart3, Shield, Upload, Menu, MessageSquareText
 } from 'lucide-react';
 
@@ -17,6 +17,7 @@ export default function Layout({ children }) {
   };
 
   const navItems = [
+    { to: '/', icon: <Home />, label: 'Home' },
     { to: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
     { to: '/profile', icon: <UserRound />, label: 'Profile' },
     { to: '/test', icon: <FileText />, label: 'Assessment' },
@@ -52,6 +53,7 @@ export default function Layout({ children }) {
               key={item.to}
               to={item.to}
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              end={item.to === '/'}
               onClick={() => setSidebarOpen(false)}
             >
               {item.icon}

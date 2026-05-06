@@ -213,6 +213,7 @@ router.get('/leaderboard', protect, async (req, res) => {
           avgScore: { $round: ['$avgScore', 1] },
           name: '$user.name',
           email: '$user.email',
+          avatarUrl: '$user.avatarUrl',
         },
       },
     ]);

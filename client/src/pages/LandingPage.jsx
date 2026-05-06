@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Code2, Brain, Trophy, BarChart3, Mail, Target, ChevronRight, Sparkles } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const HERO_VIDEO = '/PixVerse_V6_Image_Text_360P_create_highly_anim.mp4';
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   return (
     <div className="landing-page">
       {/* Navbar */}
@@ -17,8 +20,17 @@ export default function LandingPage() {
             <a href="#features">Features</a>
             <a href="#how-it-works">How it Works</a>
             <a href="#topics">Topics</a>
-            <Link to="/login" className="btn btn-outline btn-sm">Sign In</Link>
-            <Link to="/login" className="btn btn-primary btn-sm">Get Started Free</Link>
+            {user ? (
+              <>
+                <Link to="/profile" className="btn btn-outline btn-sm">Profile</Link>
+                <Link to="/dashboard" className="btn btn-primary btn-sm">Dashboard</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-outline btn-sm">Sign In</Link>
+                <Link to="/login" className="btn btn-primary btn-sm">Get Started Free</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -44,8 +56,8 @@ export default function LandingPage() {
             and personalized practice plans. Your placement success starts here.
           </p>
           <div className="landing-hero-cta">
-            <Link to="/login" className="btn btn-primary btn-lg">
-              Start Preparing Now <ChevronRight size={18} />
+            <Link to={user ? '/dashboard' : '/login'} className="btn btn-primary btn-lg">
+              {user ? 'Open Dashboard' : 'Start Preparing Now'} <ChevronRight size={18} />
             </Link>
             <a href="#features" className="btn btn-outline btn-lg">
               Explore Features
@@ -175,8 +187,8 @@ export default function LandingPage() {
           <img src="/logo.png" alt="PrepNinja" style={{ width: 80, marginBottom: 24, borderRadius: 16 }} />
           <h2>Ready to Ace Your Placements?</h2>
           <p>Join PrepNinja today and start your journey to landing your dream job.</p>
-          <Link to="/login" className="btn btn-primary btn-lg">
-            Create Free Account <ChevronRight size={18} />
+          <Link to={user ? '/dashboard' : '/login'} className="btn btn-primary btn-lg">
+            {user ? 'Continue Preparing' : 'Create Free Account'} <ChevronRight size={18} />
           </Link>
         </div>
       </section>

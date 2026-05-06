@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getLeaderboard } from '../api/client';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Leaderboard() {
@@ -9,7 +9,10 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getLeaderboard().then(res => setData(res.data.leaderboard || [])).catch(() => {}).finally(() => setLoading(false));
+    getLeaderboard()
+      .then((res) => setData(res.data.leaderboard || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
@@ -18,31 +21,25 @@ export default function Leaderboard() {
     <div className="fade-in">
       <div className="page-header">
         <h1 className="page-title"><Trophy size={28} style={{ marginRight: 8, color: 'var(--accent-amber)' }} /> Leaderboard</h1>
-        <p className="page-subtitle">Daily rankings — top performers</p>
+        <p className="page-subtitle">Daily rankings - top performers</p>
       </div>
 
       {data.length > 0 ? (
         <>
-          {/* Top 3 podium */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 32, flexWrap: 'wrap' }}>
+          <div className="leaderboard-podium">
             {data.slice(0, 3).map((entry, i) => (
-              <div key={entry._id} className="card slide-up" style={{ textAlign: 'center', padding: '32px 28px', minWidth: 180, flex: '0 1 220px', animationDelay: `${i * 0.15}s`, ...(i === 0 ? { transform: 'scale(1.05)', borderColor: 'rgba(251,191,36,0.3)' } : {}) }}>
-                <div className={`leaderboard-rank rank-${i + 1}`} style={{ margin: '0 auto 12px' }}>
+              <div key={entry._id} className={`leaderboard-card card slide-up rank-card-${i + 1}`} style={{ animationDelay: `${i * 0.15}s` }}>
+                <div className={`leaderboard-rank rank-${i + 1}`}>
                   {i + 1}
                 </div>
-                <div className="navbar-avatar" style={{ margin: '0 auto 8px', width: 48, height: 48, fontSize: '1.1rem' }}>
-                  {entry.name?.charAt(0)?.toUpperCase()}
-                </div>
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  {entry.totalScore}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{entry.testsCompleted} tests · Avg {entry.avgScore}%</div>
+                <LeaderboardAvatar entry={entry} size="lg" />
+                <div className="leaderboard-name">{entry.name}</div>
+                <div className="leaderboard-score">{entry.totalScore}</div>
+                <div className="leaderboard-meta">{entry.testsCompleted} tests - Avg {entry.avgScore}%</div>
               </div>
             ))}
           </div>
 
-          {/* Full table */}
           <div className="card">
             <div className="table-container">
               <table className="table">
@@ -55,8 +52,16 @@ export default function Leaderboard() {
                           {entry.rank}
                         </div>
                       </td>
-                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {entry.name} {entry.email === user?.email && <span className="badge badge-blue" style={{ marginLeft: 8 }}>You</span>}
+                      <td>
+                        <div className="leaderboard-user-cell">
+                          <LeaderboardAvatar entry={entry} />
+                          <div>
+                            <div className="leaderboard-table-name">
+                              {entry.name} {entry.email === user?.email && <span className="badge badge-blue">You</span>}
+                            </div>
+                            <div className="leaderboard-table-email">{entry.email}</div>
+                          </div>
+                        </div>
                       </td>
                       <td style={{ fontWeight: 700 }}>{entry.totalScore}</td>
                       <td>{entry.testsCompleted}</td>
@@ -70,11 +75,21 @@ export default function Leaderboard() {
         </>
       ) : (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🏆</div>
+          <Trophy size={48} style={{ color: 'var(--accent-amber)', marginBottom: 16 }} />
           <h3 style={{ marginBottom: 8 }}>No rankings yet</h3>
           <p style={{ color: 'var(--text-secondary)' }}>Complete tests to appear on the leaderboard!</p>
         </div>
       )}
     </div>
   );
+}
+
+function LeaderboardAvatar({ entry, size = 'sm' }) {
+  const label = entry.name?.charAt(0)?.toUpperCase() || 'U';
+
+  if (entry.avatarUrl) {
+    return <img className={`leaderboard-avatar ${size}`} src={entry.avatarUrl} alt={entry.name || 'User'} />;
+  }
+
+  return <div className={`leaderboard-avatar fallback ${size}`}>{label}</div>;
 }
