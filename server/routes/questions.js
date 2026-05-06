@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Question = require('../models/Question');
 const { protect, requireAdmin } = require('../middleware/auth');
-const { validateQuestionGen, validateCompanyGen } = require('../middleware/validator');
+const { validateQuestionGen, validateCompanyGen, validateCoreGen } = require('../middleware/validator');
 const { generateMCQQuestions, generateDSAQuestions, generateCompanyQuestions } = require('../services/aiService');
 
 // POST /api/questions/generate-ai - Generate questions with AI
@@ -69,6 +69,36 @@ router.post('/generate-company', protect, validateCompanyGen, async (req, res) =
   } catch (error) {
     console.error('Company question generation error:', error);
     const message = error.message || 'Failed to generate company questions. Check AI API key configuration.';
+    res.status(500).json({ message });
+  }
+});
+
+// POST /api/questions/generate-core - Generate core subject MCQ questions
+router.post('/generate-core', protect, validateCoreGen, async (req, res) => {
+  try {
+    const { subject, difficulty = 'medium', count = 10 } = req.body;
+    const generated = await generateMCQQuestions(subject, difficulty, count);
+
+    const savedQuestions = await Promise.all(
+      generated.map((q) => Question.create({
+        type: 'Aptitude',
+        topic: subject,
+        difficulty,
+        aiGenerated: true,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      }))
+    );
+
+    res.status(201).json({
+      message: `${savedQuestions.length} questions generated for ${subject}`,
+      questions: savedQuestions,
+    });
+  } catch (error) {
+    console.error('Core subject generation error:', error);
+    const message = error.message || 'Failed to generate core subject questions.';
     res.status(500).json({ message });
   }
 });

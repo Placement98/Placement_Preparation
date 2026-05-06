@@ -20,6 +20,7 @@ export default function Layout({ children }) {
     { to: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
     { to: '/test', icon: <FileText />, label: 'Assessment' },
     { to: '/practice', icon: <BookOpen />, label: 'Practice' },
+    { to: '/core', icon: <BookOpen />, label: 'Core Subjects' },
     { to: '/coding', icon: <Code2 />, label: 'Code Editor' },
     { to: '/results', icon: <BarChart3 />, label: 'Results' },
     { to: '/leaderboard', icon: <Trophy />, label: 'Leaderboard' },

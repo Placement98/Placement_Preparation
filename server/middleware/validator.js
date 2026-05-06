@@ -43,6 +43,23 @@ const validateCompanyGen = [
   handleValidation,
 ];
 
+const CORE_SUBJECTS = [
+  'DBMS',
+  'SQL',
+  'Operating Systems',
+  'Computer Networks',
+  'OOP',
+  'DSA',
+  'Software Engineering',
+];
+
+const validateCoreGen = [
+  body('subject').isIn(CORE_SUBJECTS).withMessage('Invalid subject'),
+  body('difficulty').isIn(['easy', 'medium', 'hard']).withMessage('Invalid difficulty'),
+  body('count').optional().isInt({ min: 3, max: 20 }).withMessage('Count must be 3-20'),
+  handleValidation,
+];
+
 // Code submission validation
 const validateCodeSubmission = [
   body('code').notEmpty().withMessage('Code is required'),
@@ -56,6 +73,7 @@ module.exports = {
   validateLogin,
   validateQuestionGen,
   validateCompanyGen,
+  validateCoreGen,
   validateCodeSubmission,
   handleValidation,
 };
