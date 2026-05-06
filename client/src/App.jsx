@@ -67,9 +67,9 @@ export default function App() {
         <Toaster
           position="top-right"
           toastOptions={{
-            style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontFamily: "'Inter', sans-serif" },
-            success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#f43f5e', secondary: '#fff' } },
+            style: { background: '#fff7ed', color: '#1f2937', border: '1px solid rgba(249, 115, 22, 0.25)', borderRadius: '12px', fontFamily: "'Manrope', 'DM Sans', sans-serif" },
+            success: { iconTheme: { primary: '#10b981', secondary: '#fff7ed' } },
+            error: { iconTheme: { primary: '#f43f5e', secondary: '#fff7ed' } },
           }}
         />
       </AuthProvider>

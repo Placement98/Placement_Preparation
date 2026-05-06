@@ -3,6 +3,13 @@ import { Code2, Brain, Trophy, BarChart3, Mail, Target, ChevronRight, Sparkles }
 import { useAuth } from '../contexts/AuthContext';
 
 const HERO_VIDEO = '/PixVerse_V6_Image_Text_360P_create_highly_anim.mp4';
+const COMPANY_LOGOS = [
+  { src: '/Capgemini_Logo_2COL_RGB.png', alt: 'Capgemini' },
+  { src: '/partner-wipro-512px.png', alt: 'Wipro' },
+  { src: '/images.png', alt: 'Company logo' },
+  { src: '/images%20(1).png', alt: 'Company logo' },
+  { src: '/channels4_profile.jpg', alt: 'Company logo' },
+];
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -77,6 +84,22 @@ export default function LandingPage() {
             <div className="landing-stat">
               <strong>AI</strong>
               <span>Generated Content</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Placement Logos */}
+      <section className="landing-logos" aria-label="Placement partners">
+        <div className="landing-logos-inner">
+          <p className="landing-logos-title">Our students are placed at</p>
+          <div className="landing-marquee">
+            <div className="landing-marquee-track">
+              {[...COMPANY_LOGOS, ...COMPANY_LOGOS].map((logo, index) => (
+                <div className="landing-logo-card" key={`${logo.src}-${index}`}>
+                  <img src={logo.src} alt={logo.alt} loading="lazy" />
+                </div>
+              ))}
             </div>
           </div>
         </div>
