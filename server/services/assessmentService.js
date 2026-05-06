@@ -70,6 +70,10 @@ async function getCurrentRound() {
   return ensureRound(todayKey, 'evening');
 }
 
+function getRoundForSlot(dateKey, slot) {
+  return ensureRound(dateKey, slot);
+}
+
 function startAssessmentScheduler() {
   cron.schedule('0 9 * * *', async () => {
     try {
@@ -97,5 +101,6 @@ function startAssessmentScheduler() {
 module.exports = {
   startAssessmentScheduler,
   getCurrentRound,
+  getRoundForSlot,
   ROUND_CONFIG,
 };

@@ -100,6 +100,22 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {typeof stats?.stats?.roundsCompletedToday === 'number' && (
+        <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Daily Assessment Rounds</div>
+            <div style={{ color: 'var(--text-secondary)' }}>
+              {stats.stats.roundsCompletedToday >= 2
+                ? 'Both rounds completed for today. Come back tomorrow for new questions.'
+                : `You have ${stats.stats.roundsRemainingToday} round(s) left for today.`}
+            </div>
+          </div>
+          <div className="badge badge-blue">
+            {stats.stats.roundsCompletedToday}/2 completed
+          </div>
+        </div>
+      )}
+
       <div className="stats-grid">
         {statCards.map((s, i) => (
           <div key={i} className={`stat-card ${s.color} slide-up`} style={{ animationDelay: `${i * 0.1}s` }}>

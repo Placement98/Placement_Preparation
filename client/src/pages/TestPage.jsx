@@ -28,6 +28,9 @@ export default function TestPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [round, setRound] = useState(null);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [roundMessage, setRoundMessage] = useState('');
+  const [dayCompleteMessage, setDayCompleteMessage] = useState('');
 
   const handleStart = async () => {
     setLoading(true);
@@ -42,6 +45,9 @@ export default function TestPage() {
       setAnswers({});
       setDsaAnswers({});
       setRound(res.data.round || null);
+      setRoundNumber(res.data.roundNumber || 1);
+      setRoundMessage('');
+      setDayCompleteMessage('');
       setPhase('testing');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to start test');
@@ -51,7 +57,6 @@ export default function TestPage() {
 
   const handleSubmit = useCallback(async () => {
     if (phase !== 'testing') return;
-    setPhase('submitted');
     setLoading(true);
     try {
       const answerArray = questions.map((q) => {
@@ -74,9 +79,29 @@ export default function TestPage() {
         timeTaken: timeLimit - timeLeft,
         roundId: round?.id || null,
       });
-      setResult(res.data.result);
-      toast.success('Test submitted!');
-      localStorage.removeItem(STORAGE_KEY);
+      if (res.data.nextRoundAvailable) {
+        setRoundMessage(`Round ${res.data.roundNumber} complete. Starting round ${res.data.roundNumber + 1}.`);
+        const next = await startTest({});
+        const limit = next.data.timeLimit || 3600;
+        setQuestions(next.data.questions);
+        setTimeLimit(limit);
+        setTimeLeft(limit);
+        setStartedAt(Date.now());
+        setCurrent(0);
+        setAnswers({});
+        setDsaAnswers({});
+        setRound(next.data.round || null);
+        setRoundNumber(next.data.roundNumber || 2);
+        setPhase('testing');
+        setResult(null);
+        toast.success(`Round ${res.data.roundNumber} complete. Round ${res.data.roundNumber + 1} is ready.`);
+      } else {
+        setResult(res.data.result);
+        setPhase('submitted');
+        setDayCompleteMessage(res.data.dayCompleteMessage || 'Both rounds completed for today. Please come back tomorrow.');
+        toast.success('Test submitted!');
+        localStorage.removeItem(STORAGE_KEY);
+      }
     } catch (err) {
       toast.error('Failed to submit test');
     }
@@ -100,6 +125,9 @@ export default function TestPage() {
     setTimeLimit(limit);
     setStartedAt(session.startedAt || Date.now());
     setTimeLeft(remaining);
+    setRoundNumber(session.roundNumber || 1);
+    setRoundMessage(session.roundMessage || '');
+    setDayCompleteMessage(session.dayCompleteMessage || '');
   }, []);
 
   useEffect(() => {
@@ -113,9 +141,12 @@ export default function TestPage() {
       round,
       timeLimit,
       startedAt,
+      roundNumber,
+      roundMessage,
+      dayCompleteMessage,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [phase, questions, current, answers, dsaAnswers, round, timeLimit, startedAt]);
+  }, [phase, questions, current, answers, dsaAnswers, round, timeLimit, startedAt, roundNumber, roundMessage, dayCompleteMessage]);
 
   // Timer
   useEffect(() => {
@@ -171,6 +202,11 @@ export default function TestPage() {
         <div className="card" style={{ maxWidth: 600, margin: '20px auto', textAlign: 'center', padding: 40 }}>
           {loading ? <div className="spinner" style={{ margin: '0 auto' }} /> : result ? (
             <>
+              {dayCompleteMessage && (
+                <div className="badge badge-blue" style={{ display: 'inline-block', marginBottom: 16 }}>
+                  {dayCompleteMessage}
+                </div>
+              )}
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>{result.scores?.overall >= 70 ? '🎉' : result.scores?.overall >= 40 ? '💪' : '📚'}</div>
               <h2 style={{ fontSize: '1.5rem', marginBottom: 24 }}>
                 {result.scores?.overall >= 70 ? 'Excellent Work!' : result.scores?.overall >= 40 ? 'Good Effort!' : 'Keep Practicing!'}
@@ -237,12 +273,17 @@ export default function TestPage() {
 
       <div className="test-content">
         <div className="card">
+          {roundMessage && (
+            <div className="badge badge-blue" style={{ display: 'inline-block', marginBottom: 12 }}>
+              {roundMessage}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <span className={`badge ${q?.type === 'DSA' ? 'badge-purple' : 'badge-blue'}`}>{q?.type}</span>
             <span className={`badge ${q?.difficulty === 'easy' ? 'badge-green' : q?.difficulty === 'hard' ? 'badge-rose' : 'badge-amber'}`}>{q?.difficulty}</span>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8 }}>
-            Question {current + 1} of {questions.length} • Topic: {q?.topic}
+            Round {roundNumber} • Question {current + 1} of {questions.length} • Topic: {q?.topic}
           </div>
 
           {q?.type === 'Aptitude' ? (

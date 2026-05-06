@@ -66,6 +66,20 @@ router.get('/stats', protect, async (req, res) => {
       else if (latestResult.scores.overall < previousResult.scores.overall) trend = 'declining';
     }
 
+    const todayKey = getDateKeyInTimeZone(new Date(), TIME_ZONE);
+    const dayStart = makeZonedDate(todayKey, '00:00', TIME_ZONE);
+    const nextKey = shiftDateKey(todayKey, 1, TIME_ZONE);
+    const dayEnd = makeZonedDate(nextKey, '00:00', TIME_ZONE);
+    const roundsCompletedToday = await Result.countDocuments({
+      userId,
+      testType: 'assessment',
+      $or: [
+        { roundDateKey: todayKey },
+        { roundDateKey: { $exists: false }, createdAt: { $gte: dayStart, $lt: dayEnd } },
+        { roundDateKey: null, createdAt: { $gte: dayStart, $lt: dayEnd } },
+      ],
+    });
+
     res.json({
       user: {
         name: req.user.name,
@@ -79,6 +93,8 @@ router.get('/stats', protect, async (req, res) => {
         passedSubmissions,
         accuracy: totalSubmissions > 0 ? Math.round((passedSubmissions / totalSubmissions) * 100) : 0,
         trend,
+        roundsCompletedToday,
+        roundsRemainingToday: Math.max(0, 2 - roundsCompletedToday),
       },
       results,
       recentSubmissions,

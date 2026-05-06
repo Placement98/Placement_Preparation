@@ -3,15 +3,41 @@ const router = express.Router();
 const Question = require('../models/Question');
 const Submission = require('../models/Submission');
 const AssessmentRound = require('../models/AssessmentRound');
+const Result = require('../models/Result');
 const { protect } = require('../middleware/auth');
 const { analyzeTestResults } = require('../services/analysisService');
 const { sendPracticeEmail } = require('../services/emailService');
-const { getCurrentRound, ROUND_CONFIG } = require('../services/assessmentService');
+const { getRoundForSlot, ROUND_CONFIG } = require('../services/assessmentService');
+const { TIME_ZONE, getDateKeyInTimeZone, makeZonedDate, shiftDateKey } = require('../utils/time');
 
 // POST /api/test/start - Start an assessment test
 router.post('/start', protect, async (req, res) => {
   try {
-    const round = await getCurrentRound();
+    const todayKey = getDateKeyInTimeZone(new Date(), TIME_ZONE);
+    const dayStart = makeZonedDate(todayKey, '00:00', TIME_ZONE);
+    const nextKey = shiftDateKey(todayKey, 1, TIME_ZONE);
+    const dayEnd = makeZonedDate(nextKey, '00:00', TIME_ZONE);
+
+    const roundsCompletedToday = await Result.countDocuments({
+      userId: req.user._id,
+      testType: 'assessment',
+      $or: [
+        { roundDateKey: todayKey },
+        { roundDateKey: { $exists: false }, createdAt: { $gte: dayStart, $lt: dayEnd } },
+        { roundDateKey: null, createdAt: { $gte: dayStart, $lt: dayEnd } },
+      ],
+    });
+
+    if (roundsCompletedToday >= 2) {
+      return res.status(403).json({
+        message: 'You have completed both rounds for today. Please come back tomorrow for new questions.',
+        roundsCompletedToday,
+        roundsRemainingToday: 0,
+      });
+    }
+
+    const slot = roundsCompletedToday === 0 ? 'morning' : 'evening';
+    const round = await getRoundForSlot(todayKey, slot);
     const questionIds = round?.questionIds || [];
     const allQuestions = questionIds.length
       ? await Question.find({ _id: { $in: questionIds } })
@@ -51,6 +77,9 @@ router.post('/start', protect, async (req, res) => {
           aptitudeCount: ROUND_CONFIG.aptitudeCount,
         }
         : null,
+      roundNumber: roundsCompletedToday + 1,
+      roundsCompletedToday,
+      roundsRemainingToday: 2 - roundsCompletedToday,
     });
   } catch (error) {
     console.error('Start test error:', error);
@@ -116,6 +145,25 @@ router.post('/submit', protect, async (req, res) => {
 
     const result = await analyzeTestResults(req.user._id, populatedSubmissions, 'assessment', roundMeta);
 
+    const todayKey = getDateKeyInTimeZone(new Date(), TIME_ZONE);
+    const dayStart = makeZonedDate(todayKey, '00:00', TIME_ZONE);
+    const nextKey = shiftDateKey(todayKey, 1, TIME_ZONE);
+    const dayEnd = makeZonedDate(nextKey, '00:00', TIME_ZONE);
+
+    const roundsCompletedToday = await Result.countDocuments({
+      userId: req.user._id,
+      testType: 'assessment',
+      $or: [
+        { roundDateKey: todayKey },
+        { roundDateKey: { $exists: false }, createdAt: { $gte: dayStart, $lt: dayEnd } },
+        { roundDateKey: null, createdAt: { $gte: dayStart, $lt: dayEnd } },
+      ],
+    });
+
+    const nextRoundAvailable = roundsCompletedToday < 2;
+    const dayComplete = roundsCompletedToday >= 2;
+    const roundNumber = roundMeta?.roundSlot === 'evening' ? 2 : 1;
+
     // Auto-send practice email if weak topics detected (fire-and-forget)
     if (result.weakTopics && result.weakTopics.length > 0) {
       sendPracticeEmail(req.user.email, req.user.name, result.weakTopics)
@@ -130,6 +178,14 @@ router.post('/submit', protect, async (req, res) => {
     res.json({
       message: 'Test submitted successfully',
       emailSent: result.weakTopics?.length > 0,
+      nextRoundAvailable,
+      dayComplete,
+      roundNumber,
+      roundsCompletedToday,
+      roundsRemainingToday: Math.max(0, 2 - roundsCompletedToday),
+      dayCompleteMessage: dayComplete
+        ? 'For today, both rounds are completed. Please come back tomorrow for new questions. Thank you!'
+        : null,
       result: {
         scores: result.scores,
         topicScores: result.topicScores,
