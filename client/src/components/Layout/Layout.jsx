@@ -1,13 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, FileText, Code2, Trophy, UserRound, Home,
-  LogOut, BookOpen, BarChart3, Shield, Upload, Menu, MessageSquareText
+  LogOut, BookOpen, BarChart3, Shield, Upload, Menu, MessageSquareText,
+  Moon, Sun
 } from 'lucide-react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -91,6 +94,12 @@ export default function Layout({ children }) {
           <Menu size={20} />
         </button>
         <div className="navbar-title"></div>
+        {user && (
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+        )}
         <button className="navbar-user" onClick={() => navigate('/profile')}>
           {user?.avatarUrl ? (
             <img className="navbar-avatar" src={user.avatarUrl} alt={user?.name || 'User'} />
