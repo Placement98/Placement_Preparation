@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { getQuestions, runCode, submitCode } from '../api/client';
-import { Play, Send, ChevronDown, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { Play, Send, CheckCircle, XCircle, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const LANGUAGES = [
@@ -11,7 +12,22 @@ const LANGUAGES = [
   { id: 'java', label: 'Java' },
 ];
 
+const STORAGE_KEY = 'assessmentSessionV1';
+
+const loadSession = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 export default function CodingEditor() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromTest = location.state?.fromTest;
+  const focusQuestionId = location.state?.questionId;
   const [questions, setQuestions] = useState([]);
   const [selectedQ, setSelectedQ] = useState(null);
   const [language, setLanguage] = useState('javascript');
@@ -27,6 +43,18 @@ export default function CodingEditor() {
 
   const loadQuestions = async () => {
     try {
+      if (fromTest) {
+        const session = loadSession();
+        const dsaQuestions = session?.questions?.filter((q) => q.type === 'DSA') || [];
+        if (dsaQuestions.length > 0) {
+          setQuestions(dsaQuestions);
+          const target = dsaQuestions.find((q) => q._id === focusQuestionId) || dsaQuestions[0];
+          const saved = session?.dsaAnswers?.[target._id];
+          selectQuestion(target, saved);
+          return;
+        }
+      }
+
       const res = await getQuestions({ type: 'DSA', limit: 50 });
       setQuestions(res.data.questions);
       if (res.data.questions.length > 0) {
@@ -35,9 +63,12 @@ export default function CodingEditor() {
     } catch { /* ignore */ }
   };
 
-  const selectQuestion = (q) => {
+  const selectQuestion = (q, saved) => {
+    const nextLanguage = saved?.language || language;
+    if (nextLanguage !== language) setLanguage(nextLanguage);
     setSelectedQ(q);
-    setCode(q.starterCode?.[language] || `// Write your ${language} solution here\n`);
+    const starter = q.starterCode?.[nextLanguage] || `// Write your ${nextLanguage} solution here\n`;
+    setCode(saved?.code || starter);
     setResults(null);
     setTab('description');
   };
@@ -48,6 +79,20 @@ export default function CodingEditor() {
       setCode(selectedQ.starterCode?.[lang] || `// Write your ${lang} solution here\n`);
     }
   };
+
+  useEffect(() => {
+    if (!fromTest || !selectedQ) return;
+    const session = loadSession();
+    if (!session) return;
+    const next = {
+      ...session,
+      dsaAnswers: {
+        ...(session.dsaAnswers || {}),
+        [selectedQ._id]: { code, language },
+      },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }, [fromTest, selectedQ, code, language]);
 
   const handleRun = async () => {
     if (!selectedQ) return;
@@ -151,6 +196,11 @@ export default function CodingEditor() {
             <button className="btn btn-success btn-sm" onClick={handleSubmit} disabled={submitting || !selectedQ}>
               {submitting ? <Loader size={14} className="spinning" /> : <Send size={14} />} Submit
             </button>
+            {fromTest && (
+              <button className="btn btn-outline btn-sm" onClick={() => navigate('/test')}>
+                Back to Assessment
+              </button>
+            )}
           </div>
         </div>
 

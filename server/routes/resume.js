@@ -39,6 +39,9 @@ router.post('/analyze', protect, upload.single('resume'), async (req, res) => {
       summary: result.summary || '',
       topics: result.topics || [],
       questions: result.questions || [],
+      atsScore: result.atsScore || 0,
+      atsBreakdown: result.atsBreakdown || {},
+      improvements: result.improvements || [],
     });
 
     res.json({ message: 'Resume analyzed', result, analysisId: saved._id });

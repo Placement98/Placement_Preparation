@@ -4,13 +4,27 @@ import { startTest, submitTest } from '../api/client';
 import { Clock, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const STORAGE_KEY = 'assessmentSessionV1';
+
+const loadSession = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 export default function TestPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState('intro'); // intro | testing | submitted
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [dsaAnswers, setDsaAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(3600);
+  const [timeLimit, setTimeLimit] = useState(3600);
+  const [startedAt, setStartedAt] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [round, setRound] = useState(null);
@@ -20,7 +34,13 @@ export default function TestPage() {
     try {
       const res = await startTest({});
       setQuestions(res.data.questions);
-      setTimeLeft(res.data.timeLimit || 3600);
+      const limit = res.data.timeLimit || 3600;
+      setTimeLimit(limit);
+      setTimeLeft(limit);
+      setStartedAt(Date.now());
+      setCurrent(0);
+      setAnswers({});
+      setDsaAnswers({});
       setRound(res.data.round || null);
       setPhase('testing');
     } catch (err) {
@@ -34,22 +54,68 @@ export default function TestPage() {
     setPhase('submitted');
     setLoading(true);
     try {
-      const answerArray = questions.map((q) => ({
-        questionId: q._id,
-        selectedAnswer: answers[q._id] || null,
-      }));
+      const answerArray = questions.map((q) => {
+        if (q.type === 'Aptitude') {
+          return {
+            questionId: q._id,
+            selectedAnswer: answers[q._id] || null,
+          };
+        }
+
+        const dsa = dsaAnswers[q._id] || {};
+        return {
+          questionId: q._id,
+          code: dsa.code || '',
+          language: dsa.language || 'javascript',
+        };
+      });
       const res = await submitTest({
         answers: answerArray,
-        timeTaken: 3600 - timeLeft,
+        timeTaken: timeLimit - timeLeft,
         roundId: round?.id || null,
       });
       setResult(res.data.result);
       toast.success('Test submitted!');
+      localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
       toast.error('Failed to submit test');
     }
     setLoading(false);
-  }, [phase, questions, answers, timeLeft, round]);
+  }, [phase, questions, answers, dsaAnswers, timeLeft, timeLimit, round]);
+
+  useEffect(() => {
+    const session = loadSession();
+    if (!session || session.phase !== 'testing' || !session.questions?.length) return;
+
+    const elapsed = session.startedAt ? Math.floor((Date.now() - session.startedAt) / 1000) : 0;
+    const limit = session.timeLimit || 3600;
+    const remaining = Math.max(0, limit - elapsed);
+
+    setPhase('testing');
+    setQuestions(session.questions || []);
+    setCurrent(session.current || 0);
+    setAnswers(session.answers || {});
+    setDsaAnswers(session.dsaAnswers || {});
+    setRound(session.round || null);
+    setTimeLimit(limit);
+    setStartedAt(session.startedAt || Date.now());
+    setTimeLeft(remaining);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'testing' || questions.length === 0) return;
+    const payload = {
+      phase,
+      questions,
+      current,
+      answers,
+      dsaAnswers,
+      round,
+      timeLimit,
+      startedAt,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [phase, questions, current, answers, dsaAnswers, round, timeLimit, startedAt]);
 
   // Timer
   useEffect(() => {
@@ -68,6 +134,12 @@ export default function TestPage() {
   const selectAnswer = (questionId, answer) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
+
+  const answeredCount = questions.filter((q) => (
+    q.type === 'Aptitude'
+      ? answers[q._id]
+      : dsaAnswers[q._id]?.code
+  )).length;
 
   // Intro screen
   if (phase === 'intro') {
@@ -146,7 +218,7 @@ export default function TestPage() {
           {questions.map((_, i) => (
             <button
               key={i}
-              className={`question-nav-btn ${i === current ? 'active' : ''} ${answers[questions[i]?._id] ? 'answered' : ''}`}
+              className={`question-nav-btn ${i === current ? 'active' : ''} ${questions[i]?.type === 'Aptitude' ? (answers[questions[i]?._id] ? 'answered' : '') : (dsaAnswers[questions[i]?._id]?.code ? 'answered' : '')}`}
               onClick={() => setCurrent(i)}
             >
               {i + 1}
@@ -159,7 +231,7 @@ export default function TestPage() {
           </button>
         </div>
         <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          {Object.keys(answers).length}/{questions.length} answered
+          {answeredCount}/{questions.length} answered
         </div>
       </div>
 
@@ -203,9 +275,13 @@ export default function TestPage() {
                   ))}
                 </div>
               )}
-              <p style={{ marginTop: 16, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                💡 Use the Code Editor page for DSA questions. Navigate there to write and test your code.
-              </p>
+              <button
+                className="btn btn-primary"
+                style={{ marginTop: 16 }}
+                onClick={() => navigate('/coding', { state: { fromTest: true, questionId: q?._id } })}
+              >
+                Open in Code Editor
+              </button>
             </>
           )}
 

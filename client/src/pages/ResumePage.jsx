@@ -61,6 +61,38 @@ export default function ResumePage() {
       {result && (
         <div className="card" style={{ marginTop: 24 }}>
           <div className="card-header">
+            <h3 className="card-title">ATS Score</h3>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 16 }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 700 }}>{result.atsScore ?? 0}</div>
+            <div style={{ color: 'var(--text-secondary)' }}>/ 100</div>
+          </div>
+
+          {result.atsBreakdown && (
+            <div style={{ marginBottom: 20 }}>
+              <h4 style={{ marginBottom: 10 }}>Breakdown</h4>
+              <div className="topic-badges">
+                {Object.entries(result.atsBreakdown).map(([key, value]) => (
+                  <span key={key} className="topic-badge">
+                    {key}: {value}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.improvements?.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <h4 style={{ marginBottom: 10 }}>Improvements</h4>
+              <ul className="resume-options">
+                {result.improvements.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="card-header">
             <h3 className="card-title">Summary</h3>
           </div>
           <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{result.summary}</p>

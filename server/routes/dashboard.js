@@ -47,6 +47,9 @@ router.get('/stats', protect, async (req, res) => {
             type: 'Aptitude',
             difficulty: 'medium',
           })),
+          atsScore: 0,
+          atsBreakdown: {},
+          improvements: [],
         });
       } catch (error) {
         console.error('Auto question generation error:', error.message || error);

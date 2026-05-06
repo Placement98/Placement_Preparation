@@ -19,6 +19,9 @@ const resumeAnalysisSchema = new mongoose.Schema({
   summary: { type: String, default: '' },
   topics: { type: [String], default: [] },
   questions: { type: [resumeQuestionSchema], default: [] },
+  atsScore: { type: Number, default: 0 },
+  atsBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
+  improvements: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
 });
 
