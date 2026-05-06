@@ -25,6 +25,12 @@ const submissionSchema = new mongoose.Schema({
   language: { type: String },
   selectedAnswer: { type: String }, // For MCQ
   results: [testResultSchema],
+  source: {
+    type: String,
+    enum: ['assessment', 'practice'],
+    default: 'practice',
+    index: true,
+  },
   status: {
     type: String,
     enum: ['passed', 'failed', 'error', 'pending'],

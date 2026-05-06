@@ -95,7 +95,9 @@ export default function ResumePage() {
           <div className="card-header">
             <h3 className="card-title">Summary</h3>
           </div>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{result.summary}</p>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            {result.summary || 'Summary is not available yet. Please analyze your resume again.'}
+          </p>
 
           <div style={{ marginTop: 20 }}>
             <h4 style={{ marginBottom: 10 }}>Key Topics</h4>

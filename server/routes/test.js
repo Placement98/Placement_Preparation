@@ -106,6 +106,7 @@ router.post('/submit', protect, async (req, res) => {
       const submissionData = {
         userId: req.user._id,
         questionId: answer.questionId,
+        source: 'assessment',
       };
 
       if (question.type === 'Aptitude') {

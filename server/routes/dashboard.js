@@ -80,6 +80,65 @@ router.get('/stats', protect, async (req, res) => {
       ],
     });
 
+    const dsaDailyHistory = await Submission.aggregate([
+      { $match: { userId } },
+      {
+        $lookup: {
+          from: 'questions',
+          localField: 'questionId',
+          foreignField: '_id',
+          as: 'question',
+        },
+      },
+      { $unwind: '$question' },
+      { $match: { 'question.type': 'DSA' } },
+      {
+        $project: {
+          dateKey: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt',
+              timezone: TIME_ZONE,
+            },
+          },
+          source: { $ifNull: ['$source', 'practice'] },
+          questionId: '$question._id',
+          topic: '$question.topic',
+          difficulty: '$question.difficulty',
+          text: { $ifNull: ['$question.problemStatement', '$question.question'] },
+        },
+      },
+      {
+        $group: {
+          _id: { dateKey: '$dateKey', source: '$source' },
+          count: { $sum: 1 },
+          items: {
+            $push: {
+              questionId: '$questionId',
+              topic: '$topic',
+              difficulty: '$difficulty',
+              text: '$text',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.dateKey',
+          sources: {
+            $push: {
+              source: '$_id.source',
+              count: '$count',
+              items: '$items',
+            },
+          },
+        },
+      },
+      { $project: { _id: 0, dateKey: '$_id', sources: 1 } },
+      { $sort: { dateKey: -1 } },
+      { $limit: 10 },
+    ]);
+
     res.json({
       user: {
         name: req.user.name,
@@ -99,6 +158,7 @@ router.get('/stats', protect, async (req, res) => {
       results,
       recentSubmissions,
       resume: latestResume,
+      dsaDailyHistory,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);

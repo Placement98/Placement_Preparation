@@ -78,6 +78,11 @@ function extractTopicsFallback(text) {
   return Array.from(found).slice(0, 8);
 }
 
+function buildSummaryFallback(ats) {
+  const skills = ats.keywords && ats.keywords.length ? ats.keywords.slice(0, 5).join(', ') : 'core software skills';
+  return `Resume highlights ${skills}. ATS score is ${ats.score}/100 with ${ats.improvements.length} improvement areas noted.`;
+}
+
 function normalizeText(text) {
   return (text || '')
     .replace(/\r/g, '\n')
@@ -159,7 +164,7 @@ async function analyzeResumeText(text) {
 
   if (!config.gemini.apiKey) {
     return {
-      summary: 'Resume analyzed using keyword matching. Add GEMINI_API_KEY for deeper insights.',
+      summary: buildSummaryFallback(ats),
       topics: ats.keywords,
       atsScore: ats.score,
       atsBreakdown: ats.breakdown,
@@ -182,7 +187,7 @@ async function analyzeResumeText(text) {
     const result = await model.generateContent(prompt);
     const parsed = JSON.parse(result.response.text());
     return {
-      summary: parsed.summary || 'Resume analyzed successfully.',
+      summary: parsed.summary || buildSummaryFallback(ats),
       topics: parsed.topics && parsed.topics.length ? parsed.topics : ats.keywords,
       atsScore: Number.isFinite(parsed.atsScore) ? Math.max(0, Math.min(100, parsed.atsScore)) : ats.score,
       atsBreakdown: parsed.atsBreakdown && typeof parsed.atsBreakdown === 'object' ? parsed.atsBreakdown : ats.breakdown,
@@ -191,7 +196,7 @@ async function analyzeResumeText(text) {
     };
   } catch (error) {
     return {
-      summary: 'Resume analyzed with ATS heuristics after AI parsing failed.',
+      summary: buildSummaryFallback(ats),
       topics: ats.keywords,
       atsScore: ats.score,
       atsBreakdown: ats.breakdown,

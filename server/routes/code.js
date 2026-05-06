@@ -72,6 +72,7 @@ router.post('/submit', protect, codeLimiter, validateCodeSubmission, async (req,
       code,
       language,
       results,
+      source: 'practice',
       status: allPassed ? 'passed' : 'failed',
       score: allPassed ? 1 : 0,
     });

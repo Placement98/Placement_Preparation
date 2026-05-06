@@ -11,22 +11,11 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [interviewAnswers, setInterviewAnswers] = useState({});
 
   useEffect(() => {
     fetchStats();
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('interviewAnswers');
-    if (stored) {
-      try {
-        setInterviewAnswers(JSON.parse(stored));
-      } catch {
-        setInterviewAnswers({});
-      }
-    }
-  }, []);
 
   const fetchStats = async () => {
     try {
@@ -45,13 +34,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAnswerChange = (questionText, value) => {
-    setInterviewAnswers((prev) => {
-      const next = { ...prev, [questionText]: value };
-      localStorage.setItem('interviewAnswers', JSON.stringify(next));
-      return next;
-    });
-  };
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
 
@@ -171,6 +153,40 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 className="card-title">Daily DSA History</h3>
+        </div>
+        {stats?.dsaDailyHistory?.length > 0 ? (
+          <div className="resume-questions">
+            {stats.dsaDailyHistory.map((day) => (
+              <div key={day.dateKey} className="resume-question">
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>{new Date(day.dateKey).toLocaleDateString()}</div>
+                <div className="topic-badges" style={{ marginBottom: 8 }}>
+                  {day.sources.map((source) => (
+                    <span key={`${day.dateKey}-${source.source}`} className="topic-badge">
+                      {source.source === 'assessment' ? 'Assessment' : 'Practice'}: {source.count}
+                    </span>
+                  ))}
+                </div>
+                <ul className="resume-options">
+                  {day.sources
+                    .flatMap((source) => source.items)
+                    .slice(0, 6)
+                    .map((item) => (
+                      <li key={`${day.dateKey}-${item.questionId}`}>
+                        [{item.difficulty || 'medium'}] {item.topic || 'DSA'} - {item.text || 'Question'}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state"><p>No DSA activity yet.</p></div>
+        )}
+      </div>
+
       {stats?.user?.weakTopics?.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-header">
@@ -191,61 +207,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {stats?.resume?.questions?.length > 0 && (
-        <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header">
-            <h3 className="card-title">Resume-Based Questions</h3>
-            <button className="btn btn-outline btn-sm" onClick={() => navigate('/resume')}>
-              View Resume
-            </button>
-          </div>
-          <div className="resume-questions">
-            {stats.resume.questions.slice(0, 5).map((q, i) => (
-              <div key={`${q.question}-${i}`} className="resume-question">
-                <div className="resume-question-meta">
-                  <span className={`badge ${q.type === 'Aptitude' ? 'badge-blue' : 'badge-purple'}`}>{q.type || 'Technical'}</span>
-                  <span className="resume-difficulty">{q.difficulty || 'medium'}</span>
-                </div>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>{q.question}</div>
-                {q.options?.length > 0 && (
-                  <ul className="resume-options">
-                    {q.options.map((opt) => (
-                      <li key={opt}>{opt}</li>
-                    ))}
-                  </ul>
-                )}
-                {q.explanation && (
-                  <div className="resume-explanation">{q.explanation}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {stats?.resume?.questions?.length > 0 && (
-        <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header">
-            <h3 className="card-title">Interview Practice</h3>
-          </div>
-          <div className="interview-questions">
-            {stats.resume.questions.slice(0, 5).map((q, i) => (
-              <div key={`interview-${q.question}-${i}`} className="interview-question">
-                <div className="interview-question-title">
-                  {i + 1}. {q.question}
-                </div>
-                <textarea
-                  className="interview-answer"
-                  rows={4}
-                  placeholder="Write your answer here..."
-                  value={interviewAnswers[q.question] || ''}
-                  onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="card">
         <div className="card-header">
