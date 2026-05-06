@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  LayoutDashboard, FileText, Code2, Trophy, Settings,
+  LayoutDashboard, FileText, Code2, Trophy, UserRound,
   LogOut, BookOpen, BarChart3, Shield, Upload, Menu, MessageSquareText
 } from 'lucide-react';
 
@@ -18,6 +18,7 @@ export default function Layout({ children }) {
 
   const navItems = [
     { to: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
+    { to: '/profile', icon: <UserRound />, label: 'Profile' },
     { to: '/test', icon: <FileText />, label: 'Assessment' },
     { to: '/practice', icon: <BookOpen />, label: 'Practice' },
     { to: '/core', icon: <BookOpen />, label: 'Core Subjects' },
@@ -88,12 +89,16 @@ export default function Layout({ children }) {
           <Menu size={20} />
         </button>
         <div className="navbar-title"></div>
-        <div className="navbar-user">
-          <div className="navbar-avatar">
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
+        <button className="navbar-user" onClick={() => navigate('/profile')}>
+          {user?.avatarUrl ? (
+            <img className="navbar-avatar" src={user.avatarUrl} alt={user?.name || 'User'} />
+          ) : (
+            <div className="navbar-avatar">
+              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+          )}
           <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{user?.name || 'User'}</span>
-        </div>
+        </button>
       </div>
 
       <main className="app-main">

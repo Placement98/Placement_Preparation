@@ -1,5 +1,24 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+function parseCloudinaryUrl(value) {
+  if (!value) return {};
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'cloudinary:') return {};
+
+    return {
+      apiKey: decodeURIComponent(parsed.username || ''),
+      apiSecret: decodeURIComponent(parsed.password || ''),
+      cloudName: parsed.hostname || '',
+    };
+  } catch {
+    return {};
+  }
+}
+
+const cloudinaryUrl = parseCloudinaryUrl(process.env.CLOUDINARY_URL);
+
 module.exports = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -16,6 +35,12 @@ module.exports = {
   },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
+  },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || cloudinaryUrl.cloudName || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || cloudinaryUrl.apiKey || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || cloudinaryUrl.apiSecret || '',
+    profileFolder: process.env.CLOUDINARY_PROFILE_FOLDER || 'placement-prep/profiles',
   },
   email: {
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',

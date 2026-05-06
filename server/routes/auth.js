@@ -5,6 +5,31 @@ const { generateToken } = require('../middleware/auth');
 const { validateSignup, validateLogin } = require('../middleware/validator');
 const { authLimiter } = require('../middleware/rateLimiter');
 
+function authUserPayload(user) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    avatarUrl: user.avatarUrl,
+    headline: user.headline,
+    bio: user.bio,
+    phone: user.phone,
+    college: user.college,
+    branch: user.branch,
+    graduationYear: user.graduationYear,
+    location: user.location,
+    github: user.github,
+    linkedin: user.linkedin,
+    portfolio: user.portfolio,
+    skills: user.skills,
+    weakTopics: user.weakTopics,
+    totalScore: user.totalScore,
+    testsCompleted: user.testsCompleted,
+    createdAt: user.createdAt,
+  };
+}
+
 // POST /api/auth/signup
 router.post('/signup', authLimiter, validateSignup, async (req, res) => {
   try {
@@ -21,12 +46,7 @@ router.post('/signup', authLimiter, validateSignup, async (req, res) => {
     res.status(201).json({
       message: 'Account created successfully',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: authUserPayload(user),
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -54,12 +74,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: authUserPayload(user),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -71,16 +86,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
 const { protect } = require('../middleware/auth');
 router.get('/me', protect, async (req, res) => {
   res.json({
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      weakTopics: req.user.weakTopics,
-      totalScore: req.user.totalScore,
-      testsCompleted: req.user.testsCompleted,
-      createdAt: req.user.createdAt,
-    },
+    user: authUserPayload(req.user),
   });
 });
 

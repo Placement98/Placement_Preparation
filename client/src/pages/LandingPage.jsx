@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Code2, Brain, Trophy, BarChart3, Zap, Mail, Users, Target, ChevronRight, BookOpen, Shield, Sparkles } from 'lucide-react';
+import { Code2, Brain, Trophy, BarChart3, Mail, Target, ChevronRight, Sparkles } from 'lucide-react';
+
+const HERO_VIDEO = '/PixVerse_V6_Image_Text_360P_create_highly_anim.mp4';
 
 export default function LandingPage() {
   return (
@@ -23,14 +25,19 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="landing-hero">
-        <div className="landing-hero-bg"></div>
+        <div className="landing-hero-video-layer" aria-hidden="true">
+          <video autoPlay muted loop playsInline preload="metadata">
+            <source src={HERO_VIDEO} type="video/mp4" />
+          </video>
+        </div>
+        <div className="landing-hero-overlay"></div>
         <div className="landing-hero-content">
           <div className="landing-hero-badge">
             <Sparkles size={14} /> AI-Powered Placement Prep
           </div>
           <h1 className="landing-hero-title">
-            Train Smart.<br />
-            <span className="gradient-text">Get Placed.</span>
+            PrepNinja<br />
+            <span className="gradient-text">Placement Prep</span>
           </h1>
           <p className="landing-hero-subtitle">
             Master DSA, Aptitude & Coding with AI-generated questions, real-time code execution, 
@@ -60,9 +67,6 @@ export default function LandingPage() {
               <span>Generated Content</span>
             </div>
           </div>
-        </div>
-        <div className="landing-hero-image">
-          <img src="/logo.png" alt="PrepNinja Mascot" />
         </div>
       </section>
 

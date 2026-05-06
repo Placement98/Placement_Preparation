@@ -14,6 +14,7 @@ import AdminPanel from './pages/AdminPanel';
 import ResumePage from './pages/ResumePage';
 import MockInterviewPage from './pages/MockInterviewPage';
 import CoreSubjectsPage from './pages/CoreSubjectsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ function AppRoutes() {
       <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
       <Route path="/coding" element={<ProtectedRoute><CodingEditor /></ProtectedRoute>} />
       <Route path="/practice" element={<ProtectedRoute><PracticePage /></ProtectedRoute>} />

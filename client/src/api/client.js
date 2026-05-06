@@ -32,6 +32,14 @@ export const signup = (data) => api.post('/auth/signup', data);
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');
 
+// Profile
+export const getProfile = () => api.get('/profile');
+export const updateProfile = (data) => api.put('/profile', data);
+export const uploadProfileAvatar = (formData) =>
+  api.post('/profile/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 // Questions
 export const getQuestions = (params) => api.get('/questions', { params });
 export const getQuestion = (id) => api.get(`/questions/${id}`);

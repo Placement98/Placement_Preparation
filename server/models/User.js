@@ -28,6 +28,77 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'admin'],
     default: 'student',
   },
+  avatarUrl: {
+    type: String,
+    default: '',
+  },
+  avatarPublicId: {
+    type: String,
+    default: '',
+  },
+  headline: {
+    type: String,
+    trim: true,
+    maxlength: 120,
+    default: '',
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: '',
+  },
+  phone: {
+    type: String,
+    trim: true,
+    maxlength: 30,
+    default: '',
+  },
+  college: {
+    type: String,
+    trim: true,
+    maxlength: 120,
+    default: '',
+  },
+  branch: {
+    type: String,
+    trim: true,
+    maxlength: 80,
+    default: '',
+  },
+  graduationYear: {
+    type: Number,
+    min: 2000,
+    max: 2100,
+  },
+  location: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: '',
+  },
+  github: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+    default: '',
+  },
+  linkedin: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+    default: '',
+  },
+  portfolio: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+    default: '',
+  },
+  skills: {
+    type: [String],
+    default: [],
+  },
   weakTopics: {
     type: [String],
     default: [],

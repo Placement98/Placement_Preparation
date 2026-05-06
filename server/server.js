@@ -14,6 +14,7 @@ const analysisRoutes = require('./routes/analysis');
 const emailRoutes = require('./routes/email');
 const dashboardRoutes = require('./routes/dashboard');
 const resumeRoutes = require('./routes/resume');
+const profileRoutes = require('./routes/profile');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const { startAssessmentScheduler } = require('./services/assessmentService');
 
@@ -56,6 +57,7 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 
 // Health check
