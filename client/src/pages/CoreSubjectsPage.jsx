@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { generateCoreQuestions } from '../api/client';
-import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  BookOpen,
+  Box,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  Database,
+  ListChecks,
+  Network,
+  RefreshCw,
+  Server,
+  Sparkles,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const SUBJECTS = [
-  'DBMS',
-  'SQL',
-  'Operating Systems',
-  'Computer Networks',
-  'OOP',
-  'DSA',
-  'Software Engineering',
+  { name: 'DBMS', icon: Database, tone: 'blue', description: 'ER models, normalization, transactions' },
+  { name: 'SQL', icon: ListChecks, tone: 'green', description: 'Queries, joins, grouping, constraints' },
+  { name: 'Operating Systems', icon: Server, tone: 'amber', description: 'Processes, memory, scheduling' },
+  { name: 'Computer Networks', icon: Network, tone: 'cyan', description: 'OSI, TCP/IP, routing, protocols' },
+  { name: 'OOP', icon: Box, tone: 'purple', description: 'Classes, inheritance, polymorphism' },
+  { name: 'DSA', icon: Code2, tone: 'rose', description: 'Arrays, trees, graphs, complexity' },
+  { name: 'Software Engineering', icon: BookOpen, tone: 'blue', description: 'SDLC, testing, design principles' },
 ];
 
 export default function CoreSubjectsPage() {
@@ -22,6 +34,10 @@ export default function CoreSubjectsPage() {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const answeredCount = Object.keys(answers).length;
+  const correctCount = Object.values(feedback).filter(Boolean).length;
+  const progress = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   const handleGenerate = async (nextSubject) => {
     const chosen = nextSubject || subject;
@@ -41,8 +57,9 @@ export default function CoreSubjectsPage() {
       toast.success(`Generated ${res.data.questions?.length || 0} questions`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to generate questions');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const checkMCQ = (questionId, selected, correct) => {
@@ -56,64 +73,69 @@ export default function CoreSubjectsPage() {
   if (!subject || questions.length === 0) {
     return (
       <div className="fade-in">
-        <div className="page-header">
-          <h1 className="page-title">Core Subjects</h1>
-          <p className="page-subtitle">Generate fresh MCQs for core CS topics</p>
+        <div className="page-header core-hero">
+          <div>
+            <span className="core-eyebrow"><Sparkles size={14} /> AI MCQ Practice</span>
+            <h1 className="page-title">Core Subjects</h1>
+            <p className="page-subtitle">Pick a CS topic, tune the difficulty, and practice fresh interview-style MCQs.</p>
+          </div>
+          <div className="core-hero-stat">
+            <strong>{count}</strong>
+            <span>{difficulty} questions</span>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="core-subject-grid">
           {SUBJECTS.map((item) => (
-            <button
-              key={item}
-              className="card"
-              style={{
-                cursor: 'pointer',
-                textAlign: 'center',
-                padding: 24,
-                borderColor: subject === item ? 'var(--accent-blue)' : undefined,
-              }}
-              onClick={() => setSubject(item)}
+            <SubjectIconButton
+              key={item.name}
+              item={item}
+              selected={subject === item.name}
               disabled={loading}
-            >
-              <div style={{ fontSize: '1.4rem', marginBottom: 8 }}>
-                <BookOpen size={22} />
-              </div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item}</div>
-            </button>
+              onClick={() => setSubject(item.name)}
+            />
           ))}
         </div>
 
-        <div className="card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-            <div style={{ fontWeight: 600 }}>Difficulty</div>
-            {['easy', 'medium', 'hard'].map((level) => (
-              <button
-                key={level}
-                className={`btn btn-sm ${difficulty === level ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setDifficulty(level)}
-              >
-                {level}
-              </button>
-            ))}
-            <div style={{ fontWeight: 600, marginLeft: 8 }}>Count</div>
-            {[5, 10, 15].map((n) => (
-              <button
-                key={n}
-                className={`btn btn-sm ${count === n ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setCount(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              className="btn btn-primary"
-              onClick={() => handleGenerate()}
-              disabled={loading}
-              style={{ marginLeft: 'auto' }}
-            >
-              {loading ? 'Generating...' : 'Generate Questions'}
-            </button>
+        <div className="core-control-panel">
+          <div className="core-control-group">
+            <span>Difficulty</span>
+            <div className="core-segmented">
+              {['easy', 'medium', 'hard'].map((level) => (
+                <button
+                  key={level}
+                  className={difficulty === level ? 'active' : ''}
+                  onClick={() => setDifficulty(level)}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <div className="core-control-group">
+            <span>Count</span>
+            <div className="core-segmented">
+              {[5, 10, 15].map((n) => (
+                <button
+                  key={n}
+                  className={count === n ? 'active' : ''}
+                  onClick={() => setCount(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary core-generate-btn"
+            onClick={() => handleGenerate()}
+            disabled={loading}
+          >
+            {loading ? <RefreshCw size={16} className="spinning" /> : <Sparkles size={16} />}
+            {loading ? 'Generating...' : 'Generate Questions'}
+          </button>
         </div>
       </div>
     );
@@ -124,75 +146,138 @@ export default function CoreSubjectsPage() {
 
   return (
     <div className="fade-in">
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <h1 className="page-title">{subject}</h1>
-            <p className="page-subtitle">{questions.length} questions loaded</p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-sm btn-outline" onClick={() => handleGenerate(subject)} disabled={loading}>
-              Regenerate
-            </button>
-            <button className="btn btn-sm btn-outline" onClick={() => setQuestions([])}>
-              Change Subject
-            </button>
-          </div>
+      <div className="page-header core-practice-header">
+        <div>
+          <span className="core-eyebrow"><BookOpen size={14} /> Core Subject</span>
+          <h1 className="page-title">{subject}</h1>
+          <p className="page-subtitle">{questions.length} questions loaded - {difficulty} level</p>
+        </div>
+        <div className="core-header-actions">
+          <button className="btn btn-sm btn-outline" onClick={() => handleGenerate(subject)} disabled={loading}>
+            <RefreshCw size={14} /> Regenerate
+          </button>
+          <button className="btn btn-sm btn-outline" onClick={() => setQuestions([])}>
+            Change Subject
+          </button>
         </div>
       </div>
 
       {loading ? <div className="loading-screen"><div className="spinner" /></div> : !q ? (
-        <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>📭</div>
-          <h3 style={{ marginBottom: 8 }}>No questions found</h3>
-          <p style={{ color: 'var(--text-secondary)' }}>Try a different subject</p>
+        <div className="empty-state core-empty">
+          <BookOpen />
+          <h3>No questions found</h3>
+          <p>Try a different subject or difficulty.</p>
         </div>
       ) : (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span className="badge badge-blue">Core Subject</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{current + 1} / {questions.length}</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.1rem', lineHeight: 1.6, marginBottom: 20 }}>{q.question}</h3>
-          <div className="mcq-options">
-            {q.options?.map((opt, i) => {
-              const isSelected = answered === opt;
-              const showFeedback = feedback[q._id] !== undefined;
-              return (
-                <div
-                  key={i}
-                  className={`mcq-option ${isSelected ? 'selected' : ''}`}
-                  onClick={() => !answered && checkMCQ(q._id, opt, q.correctAnswer)}
-                  style={{
-                    cursor: answered ? 'default' : 'pointer',
-                    ...(showFeedback && isSelected && feedback[q._id] ? { borderColor: 'var(--accent-emerald)', background: 'rgba(16,185,129,0.1)' } : {}),
-                    ...(showFeedback && isSelected && !feedback[q._id] ? { borderColor: 'var(--accent-rose)', background: 'rgba(244,63,94,0.1)' } : {}),
-                  }}
-                >
-                  <div className="mcq-option-marker">{String.fromCharCode(65 + i)}</div>
-                  <span>{opt}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {answered && q.explanation && (
-            <div className="resume-explanation" style={{ marginTop: 16 }}>
-              {q.explanation}
+        <div className="core-practice-layout">
+          <aside className="core-practice-sidebar">
+            <div className="core-score-card">
+              <span>Progress</span>
+              <strong>{progress}%</strong>
+              <div className="core-progress-track">
+                <div style={{ width: `${progress}%` }} />
+              </div>
             </div>
-          )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
-            <button className="btn btn-outline" disabled={current === 0} onClick={() => setCurrent(current - 1)}>
-              <ChevronLeft size={16} /> Previous
-            </button>
-            <button className="btn btn-primary" disabled={current >= questions.length - 1} onClick={() => setCurrent(current + 1)}>
-              Next <ChevronRight size={16} />
-            </button>
-          </div>
+            <div className="core-mini-stats">
+              <div>
+                <strong>{answeredCount}</strong>
+                <span>Answered</span>
+              </div>
+              <div>
+                <strong>{correctCount}</strong>
+                <span>Correct</span>
+              </div>
+            </div>
+
+            <div className="core-question-palette">
+              {questions.map((item, index) => {
+                const isAnswered = answers[item._id] !== undefined;
+                const isCorrect = feedback[item._id];
+                return (
+                  <button
+                    key={item._id || index}
+                    className={[
+                      index === current ? 'active' : '',
+                      isAnswered ? 'answered' : '',
+                      isAnswered && isCorrect ? 'correct' : '',
+                      isAnswered && !isCorrect ? 'incorrect' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => setCurrent(index)}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          <section className="core-question-panel">
+            <div className="core-question-topline">
+              <span className="badge badge-blue">Question {current + 1}</span>
+              <span>{current + 1} / {questions.length}</span>
+            </div>
+
+            <h2>{q.question}</h2>
+
+            <div className="mcq-options">
+              {q.options?.map((opt, i) => {
+                const isSelected = answered === opt;
+                const isCorrectOption = answered && opt === q.correctAnswer;
+                const showFeedback = feedback[q._id] !== undefined;
+                return (
+                  <button
+                    key={opt || i}
+                    type="button"
+                    className={[
+                      'mcq-option',
+                      isSelected ? 'selected' : '',
+                      showFeedback && isCorrectOption ? 'correct' : '',
+                      showFeedback && isSelected && !feedback[q._id] ? 'incorrect' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => !answered && checkMCQ(q._id, opt, q.correctAnswer)}
+                    disabled={Boolean(answered)}
+                  >
+                    <div className="mcq-option-marker">{String.fromCharCode(65 + i)}</div>
+                    <span>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {answered && q.explanation && (
+              <div className="resume-explanation core-answer-note">
+                {q.explanation}
+              </div>
+            )}
+
+            <div className="core-question-actions">
+              <button className="btn btn-outline" disabled={current === 0} onClick={() => setCurrent(current - 1)}>
+                <ChevronLeft size={16} /> Previous
+              </button>
+              <button className="btn btn-primary" disabled={current >= questions.length - 1} onClick={() => setCurrent(current + 1)}>
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>
+  );
+}
+
+function SubjectIconButton({ item, selected, disabled, onClick }) {
+  const Icon = item.icon;
+
+  return (
+    <button
+      className={`core-subject-card ${selected ? 'selected' : ''} ${item.tone}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <span className="core-subject-icon"><Icon size={22} /></span>
+      <span className="core-subject-name">{item.name}</span>
+      <span className="core-subject-description">{item.description}</span>
+    </button>
   );
 }

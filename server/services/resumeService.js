@@ -83,6 +83,43 @@ function buildSummaryFallback(ats) {
   return `Resume highlights ${skills}. ATS score is ${ats.score}/100 with ${ats.improvements.length} improvement areas noted.`;
 }
 
+function buildResumeQuestionsFallback(topics) {
+  const focusTopics = topics && topics.length ? topics.slice(0, 5) : ['projects', 'technical skills', 'problem solving'];
+  const primary = focusTopics[0] || 'your strongest technical skill';
+  const secondary = focusTopics[1] || 'one project';
+
+  return [
+    {
+      type: 'Technical',
+      difficulty: 'easy',
+      question: `Walk me through the most important project on your resume and explain your exact contribution.`,
+    },
+    {
+      type: 'Technical',
+      difficulty: 'medium',
+      question: `Your resume mentions ${primary}. How did you use it in a real project, and what trade-offs did you consider?`,
+    },
+    {
+      type: 'Technical',
+      difficulty: 'medium',
+      question: `Pick one achievement from your resume and explain how you measured its impact.`,
+    },
+    {
+      type: 'Technical',
+      difficulty: 'hard',
+      question: `If you had to scale or improve the ${secondary} work listed in your resume, what would you change first and why?`,
+    },
+    {
+      type: 'Aptitude',
+      difficulty: 'medium',
+      question: 'A task was completed in 12 days by 5 developers. At the same rate, how many days would 3 developers need?',
+      options: ['18 days', '20 days', '22 days', '24 days'],
+      correctAnswer: '20 days',
+      explanation: 'Total work is 5 x 12 = 60 developer-days. With 3 developers, time is 60 / 3 = 20 days.',
+    },
+  ];
+}
+
 function normalizeText(text) {
   return (text || '')
     .replace(/\r/g, '\n')
@@ -169,7 +206,7 @@ async function analyzeResumeText(text) {
       atsScore: ats.score,
       atsBreakdown: ats.breakdown,
       improvements: ats.improvements,
-      questions: [],
+      questions: buildResumeQuestionsFallback(ats.keywords),
     };
   }
 
@@ -181,7 +218,7 @@ async function analyzeResumeText(text) {
     },
   });
 
-  const prompt = `You are analyzing a software engineering resume for ATS readiness and interview prep.\n\nResume text:\n${trimmedText}\n\nReturn JSON with:\n- summary: 1-2 sentence overview\n- topics: 5-8 key topics\n- atsScore: 0-100\n- atsBreakdown: { contact, sections, keywords, impact, length, formatting } (numbers that add to 100)\n- improvements: 4-6 short bullets to improve ATS score\n- questions: 5 questions with type (Aptitude or Technical), difficulty (easy|medium|hard), question text, and for aptitude include options + correctAnswer + explanation. Technical questions can omit options/correctAnswer.`;
+  const prompt = `You are analyzing a software engineering resume for ATS readiness and interview prep.\n\nResume text:\n${trimmedText}\n\nReturn JSON with:\n- summary: 1-2 sentence overview\n- topics: 5-8 key topics found in the resume\n- atsScore: 0-100\n- atsBreakdown: { contact, sections, keywords, impact, length, formatting } (numbers that add to 100)\n- improvements: 4-6 short bullets to improve ATS score\n- questions: 6-8 questions an interviewer is likely to ask after reading this exact resume. Ground the questions in the candidate's projects, skills, tools, achievements, and gaps. Include type (Aptitude or Technical), difficulty (easy|medium|hard), question text, and for aptitude include options + correctAnswer + explanation. Technical questions can omit options/correctAnswer but should be specific and answerable from resume context.`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -192,7 +229,7 @@ async function analyzeResumeText(text) {
       atsScore: Number.isFinite(parsed.atsScore) ? Math.max(0, Math.min(100, parsed.atsScore)) : ats.score,
       atsBreakdown: parsed.atsBreakdown && typeof parsed.atsBreakdown === 'object' ? parsed.atsBreakdown : ats.breakdown,
       improvements: parsed.improvements && parsed.improvements.length ? parsed.improvements : ats.improvements,
-      questions: parsed.questions || [],
+      questions: parsed.questions && parsed.questions.length ? parsed.questions : buildResumeQuestionsFallback(parsed.topics || ats.keywords),
     };
   } catch (error) {
     return {
@@ -201,7 +238,7 @@ async function analyzeResumeText(text) {
       atsScore: ats.score,
       atsBreakdown: ats.breakdown,
       improvements: ats.improvements,
-      questions: [],
+      questions: buildResumeQuestionsFallback(ats.keywords),
     };
   }
 }

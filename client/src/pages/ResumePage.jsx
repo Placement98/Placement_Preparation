@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { analyzeResume } from '../api/client';
 import toast from 'react-hot-toast';
-import { Upload } from 'lucide-react';
+import { FileText, Lightbulb, MessageSquareText, Target, Upload } from 'lucide-react';
 
 export default function ResumePage() {
   const [file, setFile] = useState(null);
@@ -59,57 +59,70 @@ export default function ResumePage() {
       </div>
 
       {result && (
-        <div className="card" style={{ marginTop: 24 }}>
-          <div className="card-header">
-            <h3 className="card-title">ATS Score</h3>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 16 }}>
-            <div style={{ fontSize: '2.2rem', fontWeight: 700 }}>{result.atsScore ?? 0}</div>
-            <div style={{ color: 'var(--text-secondary)' }}>/ 100</div>
-          </div>
+        <div className="resume-results">
+          <section className="resume-score-panel">
+            <div>
+              <span className="core-eyebrow"><Target size={14} /> ATS Readiness</span>
+              <div className="resume-score-value">{result.atsScore ?? 0}<span>/100</span></div>
+              <p>{scoreLabel(result.atsScore ?? 0)}</p>
+            </div>
+          </section>
 
-          {result.atsBreakdown && (
-            <div style={{ marginBottom: 20 }}>
-              <h4 style={{ marginBottom: 10 }}>Breakdown</h4>
+          <section className="card resume-analysis-section">
+            <div className="card-header">
+              <h3 className="card-title"><FileText size={18} /> Resume Summary</h3>
+            </div>
+            <p className="resume-summary">
+              {result.summary || 'Summary is not available yet. Please analyze your resume again.'}
+            </p>
+
+            <div className="resume-topic-block">
+              <h4>Key Topics</h4>
               <div className="topic-badges">
-                {Object.entries(result.atsBreakdown).map(([key, value]) => (
-                  <span key={key} className="topic-badge">
-                    {key}: {value}
-                  </span>
+                {result.topics?.map((t) => (
+                  <span key={t} className="topic-badge strong">{t}</span>
                 ))}
               </div>
             </div>
-          )}
+
+            {result.atsBreakdown && (
+              <div className="resume-topic-block">
+                <h4>ATS Breakdown</h4>
+                <div className="topic-badges">
+                  {Object.entries(result.atsBreakdown).map(([key, value]) => (
+                    <span key={key} className="topic-badge">
+                      {key}: {value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
 
           {result.improvements?.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <h4 style={{ marginBottom: 10 }}>Improvements</h4>
-              <ul className="resume-options">
-                {result.improvements.map((item) => (
-                  <li key={item}>{item}</li>
+            <section className="card resume-analysis-section">
+              <div className="card-header">
+                <h3 className="card-title"><Lightbulb size={18} /> Improvements</h3>
+              </div>
+              <div className="resume-improvement-list">
+                {result.improvements.map((item, index) => (
+                  <div key={item} className="resume-improvement-item">
+                    <span>{index + 1}</span>
+                    <p>{item}</p>
+                  </div>
                 ))}
-              </ul>
-            </div>
+              </div>
+            </section>
           )}
 
-          <div className="card-header">
-            <h3 className="card-title">Summary</h3>
-          </div>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            {result.summary || 'Summary is not available yet. Please analyze your resume again.'}
-          </p>
-
-          <div style={{ marginTop: 20 }}>
-            <h4 style={{ marginBottom: 10 }}>Key Topics</h4>
-            <div className="topic-badges">
-              {result.topics?.map((t) => (
-                <span key={t} className="topic-badge strong">{t}</span>
-              ))}
+          <section className="card resume-analysis-section">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title"><MessageSquareText size={18} /> Questions You May Be Asked</h3>
+                <p className="resume-section-subtitle">Based on the projects, skills, achievements, and gaps found in your resume.</p>
+              </div>
             </div>
-          </div>
 
-          <div style={{ marginTop: 24 }}>
-            <h4 style={{ marginBottom: 10 }}>Suggested Questions</h4>
             <div className="resume-questions">
               {result.questions?.map((q, i) => (
                 <div key={`${q.question}-${i}`} className="resume-question">
@@ -128,12 +141,21 @@ export default function ResumePage() {
                   {q.explanation && (
                     <div className="resume-explanation">{q.explanation}</div>
                   )}
+                  {q.correctAnswer && (
+                    <div className="resume-correct-answer">Answer: {q.correctAnswer}</div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         </div>
       )}
     </div>
   );
+}
+
+function scoreLabel(score) {
+  if (score >= 80) return 'Strong resume. Focus on polishing role-specific keywords before applying.';
+  if (score >= 60) return 'Good base. Add stronger metrics and tighter project details to improve shortlisting chances.';
+  return 'Needs work. Prioritize sections, measurable impact, and keyword coverage first.';
 }
