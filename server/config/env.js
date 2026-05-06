@@ -22,7 +22,10 @@ const cloudinaryUrl = parseCloudinaryUrl(process.env.CLOUDINARY_URL);
 module.exports = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  mongodbUri: process.env.MONGODB_URI || process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27017/placement-prep',
+  mongodbUri: process.env.MONGODB_URI
+    || process.env.MONGO_URI
+    || process.env.MONGODB_URI_LOCAL
+    || 'mongodb://localhost:27017/placement-prep',
   jwtSecret: process.env.JWT_SECRET || 'default-secret-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   judge0: {
@@ -43,10 +46,10 @@ module.exports = {
     profileFolder: process.env.CLOUDINARY_PROFILE_FOLDER || 'placement-prep/profiles',
   },
   email: {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    user: process.env.EMAIL_USER || '',
-    pass: process.env.EMAIL_PASS || '',
+    host: process.env.EMAIL_HOST || process.env.BREVO_SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || process.env.BREVO_SMTP_PORT, 10) || 587,
+    user: process.env.EMAIL_USER || process.env.BREVO_SMTP_USER || '',
+    pass: process.env.EMAIL_PASS || process.env.BREVO_SMTP_PASS || '',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

@@ -18,6 +18,7 @@ const profileRoutes = require('./routes/profile');
 const interviewRoutes = require('./routes/interview');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const { startAssessmentScheduler } = require('./services/assessmentService');
+const { startDailyEmailJob } = require('./jobs/dailyEmail');
 
 const app = express();
 
@@ -95,6 +96,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   await connectDB();
   startAssessmentScheduler();
+  startDailyEmailJob();
 
   app.listen(config.port, () => {
     console.log(`\n🚀 Server running on http://localhost:${config.port}`);

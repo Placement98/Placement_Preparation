@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { protect, requireAdmin } = require('../middleware/auth');
 const { sendPracticeEmail, sendGeneratedQuestionsToAllUsers } = require('../services/emailService');
+const User = require('../models/User');
+const { sendEmail } = require('../utils/mailer');
 
 // POST /api/email/send-link
 router.post('/send-link', protect, async (req, res) => {
@@ -37,6 +39,24 @@ router.post('/send-questions', protect, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Email questions error:', error);
     res.status(500).json({ message: 'Failed to generate or send questions' });
+  }
+});
+
+// GET /api/email/test-email
+router.get('/test-email', protect, requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findOne({}, 'email name').lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'No users found to email' });
+    }
+
+    await sendEmail(user.email, user.name || 'Student');
+
+    res.json({ message: 'Test email sent', user: user.email });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ message: 'Failed to send test email' });
   }
 });
 
