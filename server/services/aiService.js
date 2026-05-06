@@ -291,6 +291,207 @@ async function generateCompanyQuestions(company, dsaCount = 3, aptitudeCount = 1
   return questions.slice(0, dsaCount + aptitudeCount);
 }
 
+function buildInterviewFallback(context = {}, count = 6) {
+  const topics = context.topics && context.topics.length ? context.topics : ['DSA', 'projects', 'problem solving'];
+  const primary = topics[0] || 'your strongest skill';
+  const secondary = topics[1] || 'one project';
+
+  return [
+    {
+      type: 'Resume',
+      difficulty: 'easy',
+      question: 'Tell me about yourself and connect your background to this role.',
+      expectedPoints: ['Clear introduction', 'Relevant skills', 'Career goal'],
+    },
+    {
+      type: 'Project',
+      difficulty: 'medium',
+      question: `Explain a project where you used ${primary}. What was your contribution and what challenge did you solve?`,
+      expectedPoints: ['Project context', 'Own contribution', 'Challenge', 'Result'],
+    },
+    {
+      type: 'Technical',
+      difficulty: 'medium',
+      question: `Your profile mentions ${secondary}. What are the core concepts behind it and where can it fail?`,
+      expectedPoints: ['Conceptual clarity', 'Failure cases', 'Practical example'],
+    },
+    {
+      type: 'DSA',
+      difficulty: 'medium',
+      question: 'How would you approach an unfamiliar DSA problem in an interview?',
+      expectedPoints: ['Clarify input/output', 'Brute force', 'Optimize', 'Complexity'],
+    },
+    {
+      type: 'Behavioral',
+      difficulty: 'medium',
+      question: 'Describe a time you received critical feedback and how you improved after it.',
+      expectedPoints: ['Situation', 'Feedback', 'Action', 'Result'],
+    },
+    {
+      type: 'Aptitude',
+      difficulty: 'easy',
+      question: 'A task takes 5 people 12 days. How many days will 3 people take at the same rate? Explain your calculation.',
+      expectedPoints: ['60 person-days', 'Divide by 3', '20 days'],
+    },
+  ].slice(0, count);
+}
+
+async function generateInterviewQuestions(context = {}, count = 6) {
+  if (!config.groq.apiKey) return buildInterviewFallback(context, count);
+
+  const prompt = `Generate ${count} mock interview questions for a placement-prep student.
+
+Candidate context:
+${JSON.stringify(context, null, 2)}
+
+Return only a JSON array with this exact shape:
+[
+  {
+    "type": "Resume|Project|Technical|DSA|Aptitude|Behavioral|HR",
+    "difficulty": "easy|medium|hard",
+    "question": "specific interview question",
+    "expectedPoints": ["3-5 key points a strong answer should include"]
+  }
+]
+
+Rules:
+- Questions must be specific to the candidate context when possible.
+- Include at least 2 technical/project questions.
+- Include one communication/HR or behavioral question.
+- Include one aptitude or problem-solving explanation question.
+- Do not include answers outside expectedPoints.
+- Return valid JSON only.`;
+
+  try {
+    const questions = await groqChatJson(prompt);
+    if (!Array.isArray(questions) || questions.length === 0) return buildInterviewFallback(context, count);
+    return questions.slice(0, count).map((question, index) => ({
+      type: question.type || 'Technical',
+      difficulty: question.difficulty || 'medium',
+      question: question.question || buildInterviewFallback(context, count)[index]?.question,
+      expectedPoints: Array.isArray(question.expectedPoints) ? question.expectedPoints.slice(0, 6) : [],
+    })).filter((question) => question.question);
+  } catch (error) {
+    return buildInterviewFallback(context, count);
+  }
+}
+
+function evaluateInterviewFallback(questions, answers) {
+  const feedback = questions.map((question, index) => {
+    const answer = String(answers[index]?.answer || '').trim();
+    const words = answer ? answer.split(/\s+/).length : 0;
+    const expectedPoints = question.expectedPoints || [];
+    const matched = expectedPoints.filter((point) => {
+      const importantWords = String(point).toLowerCase().split(/\W+/).filter((word) => word.length > 4);
+      return importantWords.some((word) => answer.toLowerCase().includes(word));
+    });
+
+    let score = Math.min(80, Math.round(words * 2.2));
+    if (matched.length > 0) score = Math.min(95, score + matched.length * 8);
+    if (words < 20) score = Math.min(score, 45);
+    if (!answer) score = 0;
+
+    return {
+      question: question.question,
+      score,
+      verdict: score >= 75 ? 'Strong' : score >= 50 ? 'Needs polish' : 'Needs work',
+      whatWentWrong: answer
+        ? score >= 75
+          ? 'No major issue. Add sharper examples and metrics to make the answer stronger.'
+          : 'The answer is either too short, too generic, or misses important expected points.'
+        : 'No answer was submitted for this question.',
+      improvement: expectedPoints.length
+        ? `Cover these points: ${expectedPoints.join(', ')}.`
+        : 'Use a clear structure: context, action, technical detail, result.',
+      idealAnswer: expectedPoints.length
+        ? `A strong answer should mention ${expectedPoints.join(', ')} and connect it to a real example.`
+        : 'A strong answer should be specific, structured, and backed by an example.',
+      missingPoints: expectedPoints.filter((point) => !matched.includes(point)),
+    };
+  });
+
+  const overallScore = feedback.length
+    ? Math.round(feedback.reduce((sum, item) => sum + item.score, 0) / feedback.length)
+    : 0;
+
+  return {
+    overallScore,
+    summary: overallScore >= 75
+      ? 'Good interview performance. Focus on making answers more concise and evidence-backed.'
+      : 'Your answers need more structure, technical depth, and specific examples.',
+    strengths: ['Attempted the interview flow', 'Can improve quickly with structured answers'],
+    improvements: ['Use STAR for behavioral answers', 'Mention trade-offs and complexity for technical answers', 'Add measurable project impact'],
+    feedback,
+  };
+}
+
+async function evaluateInterviewAnswers(questions, answers, context = {}) {
+  if (!config.groq.apiKey) return evaluateInterviewFallback(questions, answers);
+
+  const prompt = `Evaluate this mock interview submission for a placement-prep student.
+
+Candidate context:
+${JSON.stringify(context, null, 2)}
+
+Questions and expected points:
+${JSON.stringify(questions, null, 2)}
+
+Candidate answers:
+${JSON.stringify(answers, null, 2)}
+
+Return only valid JSON with this exact shape:
+{
+  "overallScore": 0-100,
+  "summary": "2-3 sentence summary",
+  "strengths": ["short bullet"],
+  "improvements": ["short bullet"],
+  "feedback": [
+    {
+      "question": "question text",
+      "score": 0-100,
+      "verdict": "Strong|Needs polish|Needs work",
+      "whatWentWrong": "specific gaps or mistakes",
+      "improvement": "specific improvement advice",
+      "idealAnswer": "short model answer or answer structure",
+      "missingPoints": ["missed concept or detail"]
+    }
+  ]
+}
+
+Rules:
+- Be strict but encouraging.
+- Score missing or one-line answers low.
+- Explain exactly where the answer went wrong.
+- Mention missing technical concepts, weak structure, vague claims, or incorrect reasoning.
+- Do not include any text outside JSON.`;
+
+  try {
+    const result = await groqChatJson(prompt);
+    if (!result || !Array.isArray(result.feedback)) return evaluateInterviewFallback(questions, answers);
+    const overallScore = Number(result.overallScore);
+    return {
+      overallScore: Number.isFinite(overallScore) ? Math.max(0, Math.min(100, Math.round(overallScore))) : 0,
+      summary: result.summary || '',
+      strengths: Array.isArray(result.strengths) ? result.strengths : [],
+      improvements: Array.isArray(result.improvements) ? result.improvements : [],
+      feedback: result.feedback.map((item, index) => {
+        const score = Number(item.score);
+        return {
+          question: item.question || questions[index]?.question || '',
+          score: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0,
+          verdict: item.verdict || 'Needs polish',
+          whatWentWrong: item.whatWentWrong || 'The answer needs more specific details.',
+          improvement: item.improvement || 'Add structure, examples, and technical clarity.',
+          idealAnswer: item.idealAnswer || '',
+          missingPoints: Array.isArray(item.missingPoints) ? item.missingPoints : [],
+        };
+      }),
+    };
+  } catch (error) {
+    return evaluateInterviewFallback(questions, answers);
+  }
+}
+
 async function testGroq() {
   const result = await groqChatJson('Return JSON: {"ok": true}');
   return result;
@@ -302,5 +503,7 @@ module.exports = {
   generateRandomQuestions,
   generateFixedMixQuestions,
   generateCompanyQuestions,
+  generateInterviewQuestions,
+  evaluateInterviewAnswers,
   testGroq,
 };

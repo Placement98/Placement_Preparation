@@ -77,4 +77,8 @@ export const analyzeResume = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+// Interview
+export const generateInterview = (data = {}) => api.post('/interview/generate', data);
+export const evaluateInterview = (data) => api.post('/interview/evaluate', data);
+
 export default api;

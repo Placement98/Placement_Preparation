@@ -15,6 +15,7 @@ const emailRoutes = require('./routes/email');
 const dashboardRoutes = require('./routes/dashboard');
 const resumeRoutes = require('./routes/resume');
 const profileRoutes = require('./routes/profile');
+const interviewRoutes = require('./routes/interview');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const { startAssessmentScheduler } = require('./services/assessmentService');
 
@@ -58,6 +59,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/interview', interviewRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 
 // Health check
