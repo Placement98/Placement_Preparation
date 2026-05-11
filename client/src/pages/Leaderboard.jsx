@@ -42,7 +42,7 @@ export default function Leaderboard() {
 
           <div className="card">
             <div className="table-container">
-              <table className="table">
+              <table className="table leaderboard-table">
                 <thead><tr><th>Rank</th><th>Name</th><th>Total Score</th><th>Tests</th><th>Avg Score</th></tr></thead>
                 <tbody>
                   {data.map((entry) => (

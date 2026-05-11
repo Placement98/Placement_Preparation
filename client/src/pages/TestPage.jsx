@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startTest, submitTest } from '../api/client';
 import { Clock, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STORAGE_KEY = 'assessmentSessionV1';
+const DISQUALIFIED_RESULT_KEY = 'assessmentDisqualifiedResultV1';
 
 const loadSession = () => {
   try {
@@ -31,9 +32,11 @@ export default function TestPage() {
   const [roundNumber, setRoundNumber] = useState(1);
   const [roundMessage, setRoundMessage] = useState('');
   const [dayCompleteMessage, setDayCompleteMessage] = useState('');
+  const disqualifiedRef = useRef(false);
 
   const handleStart = async () => {
     setLoading(true);
+    disqualifiedRef.current = false;
     try {
       const res = await startTest({});
       setQuestions(res.data.questions);
@@ -109,6 +112,24 @@ export default function TestPage() {
   }, [phase, questions, answers, dsaAnswers, timeLeft, timeLimit, round]);
 
   useEffect(() => {
+    const disqualifiedRaw = localStorage.getItem(DISQUALIFIED_RESULT_KEY);
+    if (disqualifiedRaw) {
+      try {
+        const disqualified = JSON.parse(disqualifiedRaw);
+        if (disqualified?.result) {
+          setResult(disqualified.result);
+          setPhase('submitted');
+          setDayCompleteMessage(disqualified.message || 'Assessment canceled due to tab switching.');
+          toast.error(disqualified.toastMessage || 'Assessment canceled due to tab switching.');
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(DISQUALIFIED_RESULT_KEY);
+          return;
+        }
+      } catch {
+        localStorage.removeItem(DISQUALIFIED_RESULT_KEY);
+      }
+    }
+
     const session = loadSession();
     if (!session || session.phase !== 'testing' || !session.questions?.length) return;
 
@@ -160,6 +181,48 @@ export default function TestPage() {
     return () => clearInterval(timer);
   }, [phase, handleSubmit]);
 
+  const handleDisqualify = useCallback(async () => {
+    if (phase !== 'testing' || disqualifiedRef.current) return;
+    disqualifiedRef.current = true;
+    setLoading(true);
+    try {
+      const answerArray = questions.map((q) => (
+        q.type === 'Aptitude'
+          ? { questionId: q._id, selectedAnswer: null }
+          : { questionId: q._id, code: '', language: 'javascript' }
+      ));
+      const res = await submitTest({
+        answers: answerArray,
+        timeTaken: timeLimit - timeLeft,
+        roundId: round?.id || null,
+      });
+      setResult(res.data.result);
+      setPhase('submitted');
+      setDayCompleteMessage('Assessment canceled: tab switch detected. Your score is 0.');
+      toast.error('Assessment canceled: tab switch detected.');
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      toast.error('Failed to cancel test');
+    }
+    setLoading(false);
+  }, [phase, questions, timeLeft, timeLimit, round]);
+
+  useEffect(() => {
+    if (phase !== 'testing') return;
+    const handleVisibility = () => {
+      if (document.hidden) handleDisqualify();
+    };
+    const handleBlur = () => handleDisqualify();
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [phase, handleDisqualify]);
+
   const formatTime = (s) => `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
   const selectAnswer = (questionId, answer) => {
@@ -181,7 +244,7 @@ export default function TestPage() {
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>📝</div>
           <h2 style={{ fontSize: '1.4rem', marginBottom: 12 }}>Ready to begin?</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>This assessment contains a mix of DSA coding and Aptitude MCQ questions.</p>
-          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', margin: '24px 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <div className="test-intro-features">
             <div><strong style={{ color: 'var(--text-primary)' }}>⏱</strong> 60 minutes</div>
             <div><strong style={{ color: 'var(--text-primary)' }}>📊</strong> Mixed questions</div>
             <div><strong style={{ color: 'var(--text-primary)' }}>🎯</strong> Auto-graded</div>
@@ -215,7 +278,7 @@ export default function TestPage() {
                 <div className="stat-card blue"><div className="stat-card-value">{result.scores?.overall}%</div><div className="stat-card-label">Overall</div></div>
                 <div className="stat-card green"><div className="stat-card-value">{result.correctAnswers}/{result.totalQuestions}</div><div className="stat-card-label">Correct</div></div>
               </div>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+              <div className="test-result-actions" style={{ marginBottom: 24 }}>
                 <span className="badge badge-purple">DSA: {result.scores?.DSA}%</span>
                 <span className="badge badge-blue">Aptitude: {result.scores?.Aptitude}%</span>
               </div>
@@ -227,7 +290,7 @@ export default function TestPage() {
                   </div>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <div className="test-result-actions">
                 <button className="btn btn-outline" onClick={() => navigate('/dashboard')}>Dashboard</button>
                 <button className="btn btn-primary" onClick={() => navigate('/practice')}>Practice Weak Topics</button>
               </div>
@@ -278,7 +341,7 @@ export default function TestPage() {
               {roundMessage}
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div className="question-toolbar">
             <span className={`badge ${q?.type === 'DSA' ? 'badge-purple' : 'badge-blue'}`}>{q?.type}</span>
             <span className={`badge ${q?.difficulty === 'easy' ? 'badge-green' : q?.difficulty === 'hard' ? 'badge-rose' : 'badge-amber'}`}>{q?.difficulty}</span>
           </div>
@@ -326,7 +389,7 @@ export default function TestPage() {
             </>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
+          <div className="question-arrows">
             <button className="btn btn-outline" onClick={() => setCurrent(Math.max(0, current - 1))} disabled={current === 0}>
               <ChevronLeft size={16} /> Previous
             </button>

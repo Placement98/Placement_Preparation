@@ -76,7 +76,7 @@ export default function AdminPanel() {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div className="admin-tab-row" style={{ marginBottom: 24 }}>
         <button className={`btn ${tab === 'generate' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('generate')}><Sparkles size={16} /> AI Generate</button>
         <button className={`btn ${tab === 'questions' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('questions')}><FileText size={16} /> Questions ({questions.length})</button>
         <button className={`btn ${tab === 'users' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab('users')}><Users size={16} /> Users</button>

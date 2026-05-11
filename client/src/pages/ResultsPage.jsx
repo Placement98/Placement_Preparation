@@ -48,7 +48,7 @@ export default function ResultsPage() {
         <div className="card-header"><h3 className="card-title">Test History</h3></div>
         {data.results.length > 0 ? (
           <div className="table-container">
-            <table className="table">
+            <table className="table results-table">
               <thead><tr><th>Date</th><th>Type</th><th>Overall</th><th>DSA</th><th>Aptitude</th><th>Correct</th><th>Weak Topics</th></tr></thead>
               <tbody>
                 {data.results.map((r) => (

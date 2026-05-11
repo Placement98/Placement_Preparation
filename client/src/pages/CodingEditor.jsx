@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { getQuestions, runCode, submitCode } from '../api/client';
+import { getQuestions, runCode, submitCode, submitTest } from '../api/client';
 import { Play, Send, CheckCircle, XCircle, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -13,6 +13,7 @@ const LANGUAGES = [
 ];
 
 const STORAGE_KEY = 'assessmentSessionV1';
+const DISQUALIFIED_RESULT_KEY = 'assessmentDisqualifiedResultV1';
 
 const loadSession = () => {
   try {
@@ -36,6 +37,7 @@ export default function CodingEditor() {
   const [running, setRunning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab] = useState('description'); // description | results
+  const disqualifiedRef = useRef(false);
 
   useEffect(() => {
     loadQuestions();
@@ -121,6 +123,64 @@ export default function CodingEditor() {
     setSubmitting(false);
   };
 
+  const handleDisqualify = useCallback(async () => {
+    if (!fromTest || disqualifiedRef.current) return;
+    disqualifiedRef.current = true;
+
+    const session = loadSession();
+    const questionsForSubmit = session?.questions || [];
+    const startedAt = session?.startedAt;
+    const timeLimit = session?.timeLimit || 3600;
+    const elapsed = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0;
+    const timeTaken = Math.min(timeLimit, Math.max(0, elapsed));
+
+    if (questionsForSubmit.length === 0) {
+      toast.error('Assessment canceled: tab switch detected.');
+      localStorage.removeItem(STORAGE_KEY);
+      navigate('/test');
+      return;
+    }
+
+    try {
+      const answerArray = questionsForSubmit.map((q) => (
+        q.type === 'Aptitude'
+          ? { questionId: q._id, selectedAnswer: null }
+          : { questionId: q._id, code: '', language: 'javascript' }
+      ));
+      const res = await submitTest({
+        answers: answerArray,
+        timeTaken,
+        roundId: session?.round?.id || null,
+      });
+      localStorage.setItem(DISQUALIFIED_RESULT_KEY, JSON.stringify({
+        result: res.data.result,
+        message: 'Assessment canceled: tab switch detected. Your score is 0.',
+        toastMessage: 'Assessment canceled: tab switch detected.',
+      }));
+      localStorage.removeItem(STORAGE_KEY);
+      navigate('/test');
+    } catch (err) {
+      toast.error('Failed to cancel test');
+      navigate('/test');
+    }
+  }, [fromTest, navigate]);
+
+  useEffect(() => {
+    if (!fromTest) return;
+    const handleVisibility = () => {
+      if (document.hidden) handleDisqualify();
+    };
+    const handleBlur = () => handleDisqualify();
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [fromTest, handleDisqualify]);
+
   const monacoLang = language === 'cpp' ? 'cpp' : language === 'java' ? 'java' : language === 'python' ? 'python' : 'javascript';
 
   return (
@@ -178,7 +238,7 @@ export default function CodingEditor() {
       {/* Right panel: Editor + Results */}
       <div className="editor-right">
         <div className="editor-toolbar">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="editor-lang-row">
             {LANGUAGES.map((l) => (
               <button
                 key={l.id}
@@ -189,7 +249,7 @@ export default function CodingEditor() {
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="editor-action-row">
             <button className="btn btn-outline btn-sm" onClick={handleRun} disabled={running || !selectedQ}>
               {running ? <Loader size={14} className="spinning" /> : <Play size={14} />} Run
             </button>

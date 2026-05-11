@@ -80,7 +80,7 @@ export default function PracticePage() {
     return (
       <div className="fade-in">
         <div className="page-header"><h1 className="page-title">Practice</h1><p className="page-subtitle">Choose a topic or company to practice</p></div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+        <div className="practice-topic-grid">
           {TOPICS.map(t => (
             <div key={t} className="card" style={{ cursor: 'pointer', textAlign: 'center', padding: 24 }} onClick={() => setTopic(t)}>
               <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>
@@ -101,7 +101,7 @@ export default function PracticePage() {
               onChange={(e) => setCompanySearch(e.target.value)}
               style={{ marginBottom: 16 }}
             />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, maxHeight: 320, overflowY: 'auto' }}>
+            <div className="practice-company-grid">
               {filteredCompanies.map((company) => (
                 <button
                   key={company}
@@ -125,12 +125,12 @@ export default function PracticePage() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div className="practice-header-row">
           <div>
             <h1 className="page-title">Practice: {topic}</h1>
             <p className="page-subtitle">{questions.length} questions loaded</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="practice-filters">
             {['all', 'easy', 'medium', 'hard'].map(d => (
               <button key={d} className={`btn btn-sm ${difficulty === d ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDifficulty(d)}>{d}</button>
             ))}
@@ -147,7 +147,7 @@ export default function PracticePage() {
         </div>
       ) : (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div className="question-toolbar">
             <span className={`badge ${q.type === 'DSA' ? 'badge-purple' : 'badge-blue'}`}>{q.type}</span>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{current + 1} / {questions.length}</span>
           </div>
@@ -188,7 +188,7 @@ export default function PracticePage() {
             </>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
+          <div className="question-arrows">
             <button className="btn btn-outline" disabled={current === 0} onClick={() => setCurrent(current - 1)}>
               <ChevronLeft size={16} /> Previous
             </button>

@@ -61,12 +61,12 @@ export default function Dashboard() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="dashboard-header-row">
           <div>
             <h1 className="page-title">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
             <p className="page-subtitle">Here's your performance overview</p>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="dashboard-header-actions">
             <button className="btn btn-outline" onClick={() => navigate('/test')}>
               <BookOpen size={16} /> Take Assessment
             </button>
@@ -83,7 +83,7 @@ export default function Dashboard() {
       </div>
 
       {typeof stats?.stats?.roundsCompletedToday === 'number' && (
-        <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div className="card dashboard-daily-card" style={{ marginBottom: 24 }}>
           <div>
             <div style={{ fontWeight: 600, marginBottom: 6 }}>Daily Assessment Rounds</div>
             <div style={{ color: 'var(--text-secondary)' }}>
