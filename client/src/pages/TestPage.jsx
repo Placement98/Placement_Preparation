@@ -249,6 +249,9 @@ export default function TestPage() {
             <div><strong style={{ color: 'var(--text-primary)' }}>📊</strong> Mixed questions</div>
             <div><strong style={{ color: 'var(--text-primary)' }}>🎯</strong> Auto-graded</div>
           </div>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 12, fontSize: '0.9rem' }}>
+            Note: Any violation (tab switch, window change, or leaving the test) cancels the round and sets the score to 0.
+          </p>
           <button className="btn btn-primary btn-lg" onClick={handleStart} disabled={loading} style={{ marginTop: 16 }}>
             {loading ? 'Loading...' : 'Start Assessment'}
           </button>
