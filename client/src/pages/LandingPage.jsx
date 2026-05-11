@@ -62,6 +62,9 @@ export default function LandingPage() {
             Master DSA, Aptitude & Coding with AI-generated questions, real-time code execution, 
             and personalized practice plans. Your placement success starts here.
           </p>
+          <p className="landing-hero-subtitle" style={{ fontSize: '0.95rem', marginTop: 10 }}>
+            Daily assessment rules: any violation (tab switch, window change, or leaving the test) cancels the round and sets the score to 0.
+          </p>
           <div className="landing-hero-cta">
             <Link to={user ? '/dashboard' : '/login'} className="btn btn-primary btn-lg">
               {user ? 'Open Dashboard' : 'Start Preparing Now'} <ChevronRight size={18} />
