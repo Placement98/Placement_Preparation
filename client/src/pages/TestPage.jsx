@@ -277,6 +277,10 @@ export default function TestPage() {
               <h2 style={{ fontSize: '1.5rem', marginBottom: 24 }}>
                 {result.scores?.overall >= 70 ? 'Excellent Work!' : result.scores?.overall >= 40 ? 'Good Effort!' : 'Keep Practicing!'}
               </h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 16, fontSize: '0.95rem' }}>
+                Daily assessments have two rounds. Complete Round 1 to unlock Round 2. Each round is scored
+                separately, and your total score is the sum of both rounds.
+              </p>
               <div className="stats-grid" style={{ maxWidth: 400, margin: '0 auto 24px' }}>
                 <div className="stat-card blue"><div className="stat-card-value">{result.scores?.overall}%</div><div className="stat-card-label">Overall</div></div>
                 <div className="stat-card green"><div className="stat-card-value">{result.correctAnswers}/{result.totalQuestions}</div><div className="stat-card-label">Correct</div></div>
