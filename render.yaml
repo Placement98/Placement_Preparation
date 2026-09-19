@@ -26,6 +26,10 @@ services:
         value: judge0-ce.p.rapidapi.com
       - key: GEMINI_API_KEY
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
       - key: EMAIL_HOST
         value: smtp.gmail.com
       - key: EMAIL_PORT
