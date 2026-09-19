@@ -2,7 +2,7 @@ const axios = require('axios');
 const config = require('../config/env');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const TOPICS = [
   'Arrays',
   'Strings',

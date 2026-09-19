@@ -154,7 +154,7 @@ npm install
 
 # 🔑 Environment Variables Setup
 
-Create `.env` inside `server/`
+Create `.env` in the project root.
 
 ```env id="bmstfv"
 PORT=5000
@@ -163,7 +163,7 @@ MONGO_URI=your_mongodb_uri
 
 JWT_SECRET=your_jwt_secret
 
-GROK_API_KEY=your_grok_api_key
+GROQ_API_KEY=your_groq_api_key
 GEMINI_API_KEY=your_gemini_api_key
 
 BREVO_API_KEY=your_brevo_api_key
